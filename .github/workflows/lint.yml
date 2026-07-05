@@ -27,9 +27,11 @@ jobs:
       - name: helm lint (strict)
         run: helm lint . --strict
 
-      - name: helm template (defaults)
+      - name: helm template (defaults + asm lab fallback)
+        # Bare defaults are sourceMode=ssm with empty publishers, which the
+        # deployment template rejects by design; render the asm lab fallback.
         run: |
-          helm template t . --debug > /tmp/render.yaml
+          helm template t . --set manifest.sourceMode=asm --debug > /tmp/render.yaml
           test -s /tmp/render.yaml
           grep -q "kind: Deployment" /tmp/render.yaml
           grep -q "kind: Service" /tmp/render.yaml
@@ -45,6 +47,7 @@ jobs:
             --set manifest.shardBits=4 \
             --set manifest.joinedGroups=all \
             --set manifest.roleHint=proxy \
+            --set 'manifest.publishers={shard-proxy-headless.svc.cluster.local}' \
             --debug > /tmp/render-full.yaml
           grep -q "kind: ServiceMonitor" /tmp/render-full.yaml
           grep -q "kind: PodDisruptionBudget" /tmp/render-full.yaml
@@ -53,5 +56,5 @@ jobs:
 
       - name: helm template (host network)
         run: |
-          helm template t . --set networking.mode=host --debug > /tmp/render-host.yaml
+          helm template t . --set networking.mode=host --set manifest.sourceMode=asm --debug > /tmp/render-host.yaml
           grep -q "hostNetwork: true" /tmp/render-host.yaml

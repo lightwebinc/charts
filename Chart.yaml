@@ -2,7 +2,7 @@ apiVersion: v2
 name: shard-manifest
 description: BRC-139 Shard Manifest Announcement Daemon for the BSV multicast pipeline
 type: application
-version: 0.2.3
+version: 0.2.4
 # appVersion MUST equal a tag published on ghcr.io/lightwebinc/shard-manifest
 # (the chart's tag:"" default pulls this). Images are published manually via the
 # binary repo's image-publish.yml workflow; bump appVersion ONLY in lockstep with
@@ -27,4 +27,8 @@ annotations:
   artifacthub.io/license: Apache-2.0
   artifacthub.io/changes: |
     - kind: added
-      description: Initial chart scaffold
+      description: install fails fast when sourceMode=ssm and manifest.publishers is empty (was CrashLoopBackOff)
+    - kind: changed
+      description: README documents the ssm default sourceMode (asm = lab fallback) and a working quick start
+    - kind: changed
+      description: values.yaml doc-link comments repointed to shard-common/docs/logging.md and DESIGN.md SSM section

@@ -14,12 +14,18 @@ informational and does not subscribe to or interpret data-plane traffic.
 
 ```bash
 helm install my-manifest oci://ghcr.io/lightwebinc/charts/shard-manifest \
-  --version 0.2.3 \
+  --version 0.2.4 \
   --namespace bsv-mcast --create-namespace \
   --set manifest.shardBits=4 \
   --set manifest.joinedGroups=all \
-  --set manifest.roleHint=proxy
+  --set manifest.roleHint=proxy \
+  --set 'manifest.publishers={shard-proxy-headless.svc.cluster.local}'
 ```
+
+The default `manifest.sourceMode=ssm` requires a non-empty
+`manifest.publishers` (the chart fails the install otherwise). For a
+lab install without publishers, set `--set manifest.sourceMode=asm`
+instead.
 
 ## Networking
 
@@ -67,7 +73,7 @@ control-plane traces. See the
 
 ### SSM (Source-Specific Multicast)
 
-`manifest.sourceMode` defaults to `asm`. When `ssm`:
+`manifest.sourceMode` defaults to `ssm` (`asm` is the lab fallback). When `ssm`:
 
 - `manifest.publishers` MUST be a non-empty list of IPv6 literals
   and/or DNS names — typically a headless-Service name fronting the
@@ -80,8 +86,9 @@ control-plane traces. See the
   so listeners switch their data-plane address derivation to the
   `FF3x::/32` SSM prefix.
 - The shard-manifest pod's own per-pod IPv6 (Multus + Whereabouts)
-  is what receivers list in their `sources.bootstrap.manifest` to
-  `(S,G)`-join the manifest group under Posture C.
+  is what receivers pass to the listener's `-ssm-bootstrap-manifest`
+  flag (helm: `listener.ssmBootstrap.manifest`) to `(S,G)`-join the
+  manifest group under Posture C.
 
 See the [SSM Support Plan](https://github.com/lightwebinc/bsv-multicast/blob/main/DESIGN.md#source-specific-multicast-ssm)
 for fabric prerequisites.

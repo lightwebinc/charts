@@ -1,8 +1,9 @@
 # Default values for shard-manifest.
 #
 # The daemon is configured exclusively via environment variables. Each
-# values key maps to a single MANIFEST_* env var and must agree with the
-# rest of the multicast network (especially `shardBits`).
+# values key maps to one daemon env var (unprefixed UPPER_SNAKE_CASE,
+# e.g. SHARD_BITS) and must agree with the rest of the multicast
+# network (especially `shardBits`).
 
 replicaCount: 1
 
@@ -68,12 +69,12 @@ manifest:
   announceInterval: "300s"
   ttl: "0s"                           # 0 = consumer default (3× interval)
   debug: false  # deprecated alias for logLevel=debug
-  # Unified logging — see bsv-multicast/docs/UnifiedLogging/unified-logging-plan.md
+  # Unified logging — see https://github.com/lightwebinc/shard-common/blob/main/docs/logging.md
   logFormat: "json"   # text (stderr) | json (stdout; default for this daemon)
   logLevel: "info"    # debug|info|warn|error; runtime-togglable via POST /loglevel + SIGHUP
   traceSampling: 0    # 0..1 trace head sampling (0 = off; exports via otlp.endpoint)
 
-  # SSM (RFC 4607). See bsv-multicast/docs/SourceSpecificMulticast.
+  # SSM (RFC 4607). See https://github.com/lightwebinc/bsv-multicast/blob/main/DESIGN.md#source-specific-multicast-ssm
   # sourceMode "ssm" sets Flags.SourceModeSSM on every emitted manifest
   # AND requires publishers to be non-empty. Each entry is an IPv6 literal
   # or DNS name; the shard-manifest sender resolves AAAA records and
