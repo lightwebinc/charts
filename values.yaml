@@ -57,6 +57,9 @@ networking:
 manifest:
   shardBits: 0                        # 0..12; MUST match the rest of the network
   joinedGroups: ""                    # comma list of indices (hex/dec), or "all", or empty
+  # BRC-148 per-domain plane descriptors (DOMAINS env, comma-joined). Each entry:
+  #   id:bits=N[:ssm][:active][:slotspan=S][:generation=HEX32][:succbits=N:succepoch=T[:succgen=HEX][:succssm]]
+  domains: []                         # e.g. ["0x1:bits=12:active:ssm"]
   bitmap: "auto"                      # auto | list | bitmap
   roleHint: "generic"                 # generic | proxy | listener | retry-endpoint | producer | manifest-only
   generationId: ""                    # 16-byte hex; bump whenever shardBits changes

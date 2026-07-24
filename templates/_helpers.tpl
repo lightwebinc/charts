@@ -65,6 +65,10 @@ hard-coded default.
   value: {{ .Values.manifest.shardBits | quote }}
 - name: JOINED_GROUPS
   value: {{ .Values.manifest.joinedGroups | quote }}
+{{- if .Values.manifest.domains }}
+- name: DOMAINS
+  value: {{ join "," .Values.manifest.domains | quote }}
+{{- end }}
 - name: BITMAP
   value: {{ .Values.manifest.bitmap | quote }}
 - name: ROLE_HINT
