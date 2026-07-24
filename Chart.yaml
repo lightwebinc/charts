@@ -2,7 +2,7 @@ apiVersion: v2
 name: shard-manifest
 description: BRC-139 Shard Manifest Announcement Daemon for the BSV multicast pipeline
 type: application
-version: 0.2.4
+version: 0.3.0
 # appVersion MUST equal a tag published on ghcr.io/lightwebinc/shard-manifest
 # (the chart's tag:"" default pulls this). Images are published manually via the
 # binary repo's image-publish.yml workflow; bump appVersion ONLY in lockstep with
