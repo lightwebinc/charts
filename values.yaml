@@ -55,7 +55,7 @@ networking:
 
 # BRC-139 manifest content
 manifest:
-  shardBits: 0                        # 0..12; MUST match the rest of the network
+  shardBits: 2                        # 0..12; MUST match the rest of the network
   joinedGroups: ""                    # comma list of indices (hex/dec), or "all", or empty
   # BRC-148 per-domain plane descriptors (DOMAINS env, comma-joined). Each entry:
   #   id:bits=N[:ssm][:active][:slotspan=S][:generation=HEX32][:succbits=N:succepoch=T[:succgen=HEX][:succssm]]
