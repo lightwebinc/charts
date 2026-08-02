@@ -14,7 +14,7 @@ informational and does not subscribe to or interpret data-plane traffic.
 
 ```bash
 helm install my-manifest oci://ghcr.io/lightwebinc/charts/shard-manifest \
-  --version 0.2.4 \
+  --version 0.3.0 \
   --namespace bsv-mcast --create-namespace \
   --set manifest.shardBits=4 \
   --set manifest.joinedGroups=all \
@@ -87,7 +87,7 @@ control-plane traces. See the
   `FF3x::/32` SSM prefix.
 - The shard-manifest pod's own per-pod IPv6 (Multus + Whereabouts)
   is what receivers pass to the listener's `-ssm-bootstrap-manifest`
-  flag (helm: `listener.ssmBootstrap.manifest`) to `(S,G)`-join the
+  flag (helm: `config.ssmBootstrap.manifest`) to `(S,G)`-join the
   manifest group under Posture C.
 
 See the [SSM Support Plan](https://github.com/lightwebinc/bsv-multicast/blob/main/DESIGN.md#source-specific-multicast-ssm)
