@@ -44,6 +44,17 @@
         "roleHint": { "enum": ["generic", "proxy", "listener", "retry-endpoint", "producer", "manifest-only"] },
         "generationId": { "type": "string" },
         "authoritative": { "type": "boolean" },
+        "pilotOnly": { "type": "boolean" },
+        "successor": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "generationId": { "type": "string", "pattern": "^([0-9a-fA-F]{32})?$" },
+            "shardBits": { "type": "integer", "minimum": 0, "maximum": 12 },
+            "transitionEpoch": { "type": "integer", "minimum": 0 },
+            "sourceMode": { "type": "string", "enum": ["", "asm", "ssm"] }
+          }
+        },
         "instanceId": { "type": "string" },
         "scope": { "type": "string" },
         "port": { "type": "integer", "minimum": 1, "maximum": 65535 },

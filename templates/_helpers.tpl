@@ -77,6 +77,22 @@ hard-coded default.
   value: {{ .Values.manifest.generationId | quote }}
 - name: AUTHORITATIVE
   value: {{ .Values.manifest.authoritative | quote }}
+- name: PILOT_ONLY
+  value: {{ .Values.manifest.pilotOnly | default false | quote }}
+{{- with .Values.manifest.successor }}
+{{- if .generationId }}
+- name: SUCCESSOR_GENERATION_ID
+  value: {{ .generationId | quote }}
+- name: SUCCESSOR_SHARD_BITS
+  value: {{ .shardBits | int | quote }}
+- name: SUCCESSOR_TRANSITION_EPOCH
+  value: {{ .transitionEpoch | int64 | quote }}
+{{- if .sourceMode }}
+- name: SUCCESSOR_SOURCE_MODE
+  value: {{ .sourceMode | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
 - name: MANIFEST_SCOPE
   value: {{ .Values.manifest.scope | quote }}
 - name: PORT

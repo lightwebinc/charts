@@ -64,6 +64,20 @@ manifest:
   roleHint: "generic"                 # generic | proxy | listener | retry-endpoint | producer | manifest-only
   generationId: ""                    # 16-byte hex; bump whenever shardBits changes
   authoritative: false                # set Flags.Authoritative on the wire
+  # Flags.PilotOnly: this manifest describes the DESIRED fleet state rather than
+  # the announcer's own joins (implies authoritative). Listener auto-join unions
+  # groups from pilot manifests only, so leaving this false makes
+  # config.autoShardConfig.shardIncludeFromManifest a no-op on consumers.
+  pilotOnly: false
+  # BRC-139 Successor block — announces a re-shard generation transition.
+  # Emitted only when generationId is set; shardBits must differ from the
+  # manifest's own shardBits by exactly ±1, and transitionEpoch is Unix seconds
+  # at which the successor becomes the sole active generation.
+  successor:
+    generationId: ""                  # 16-byte hex; empty = no Successor block
+    shardBits: 0
+    transitionEpoch: 0
+    sourceMode: ""                    # asm|ssm; empty = inherit sourceMode
   instanceId: ""                      # OTel service.instance.id; empty = pod name
   scope: "site"                       # comma list: link,site,org,global
   port: 9001                          # UDP destination port

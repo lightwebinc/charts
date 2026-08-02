@@ -2,7 +2,7 @@ apiVersion: v2
 name: shard-manifest
 description: BRC-139 Shard Manifest Announcement Daemon for the BSV multicast pipeline
 type: application
-version: 0.3.0
+version: 0.3.1
 # appVersion MUST equal a tag published on ghcr.io/lightwebinc/shard-manifest
 # (the chart's tag:"" default pulls this). Images are published manually via the
 # binary repo's image-publish.yml workflow; bump appVersion ONLY in lockstep with
@@ -34,3 +34,7 @@ annotations:
       description: values.yaml doc-link comments repointed to shard-common/docs/logging.md and DESIGN.md SSM section
     - kind: changed
       description: appVersion 0.2.4 (shard-common v0.14.3)
+    - kind: added
+      description: manifest.pilotOnly (Flags.PilotOnly — listener auto-join unions groups from pilot manifests only)
+    - kind: added
+      description: manifest.successor.* (BRC-139 Successor block for a re-shard generation transition)
