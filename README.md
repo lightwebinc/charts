@@ -63,8 +63,8 @@ See [`values.yaml`](values.yaml) for all options, validated against
 [`values.schema.json`](values.schema.json).
 
 `manifest.domains` (BRC-148 per-domain plane descriptors → `DOMAINS` env)
-requires `image.tag` >= 0.3.0; the default `appVersion` image ignores
-`DOMAINS`.
+requires image >= 0.3.0 — satisfied by the default `appVersion`; an older
+`image.tag` pin ignores `DOMAINS`.
 
 ### Logging & tracing
 

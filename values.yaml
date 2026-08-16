@@ -59,7 +59,8 @@ manifest:
   joinedGroups: ""                    # comma list of indices (hex/dec), or "all", or empty
   # BRC-148 per-domain plane descriptors (DOMAINS env, comma-joined). Each entry:
   #   id:bits=N[:ssm][:active][:slotspan=S][:generation=HEX32][:succbits=N:succepoch=T[:succgen=HEX][:succssm]]
-  # Requires image.tag >= 0.3.0; the default appVersion image ignores DOMAINS.
+  # Requires image >= 0.3.0 — satisfied by the default appVersion; an older
+  # image.tag pin ignores DOMAINS.
   domains: []                         # e.g. ["0x1:bits=12:active:ssm"]
   bitmap: "auto"                      # auto | list | bitmap
   roleHint: "generic"                 # generic | proxy | listener | retry-endpoint | producer | manifest-only

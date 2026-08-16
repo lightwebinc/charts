@@ -2,12 +2,12 @@ apiVersion: v2
 name: shard-manifest
 description: BRC-139 Shard Manifest Announcement Daemon for the BSV multicast pipeline
 type: application
-version: 0.3.1
+version: 0.3.2
 # appVersion MUST equal a tag published on ghcr.io/lightwebinc/shard-manifest
 # (the chart's tag:"" default pulls this). Images are published manually via the
 # binary repo's image-publish.yml workflow; bump appVersion ONLY in lockstep with
 # an image publish — binary git tags are NOT image tags until published.
-appVersion: "0.2.4"
+appVersion: "0.4.0"
 kubeVersion: ">= 1.27.0-0"
 keywords:
   - bitcoin
@@ -26,6 +26,8 @@ icon: https://raw.githubusercontent.com/lightwebinc/bsv-multicast/main/.assets/i
 annotations:
   artifacthub.io/license: Apache-2.0
   artifacthub.io/changes: |
+    - kind: changed
+      description: appVersion 0.4.0 — first image published since 0.2.4; the default image parses DOMAINS (>= 0.3.0), defaults shard-bits to 2, and carries the grpc/x/net security bumps
     - kind: added
       description: manifest.domains (BRC-148 per-domain plane descriptors → DOMAINS env; requires image.tag >= 0.3.0)
     - kind: added
