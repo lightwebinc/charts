@@ -62,6 +62,10 @@ Set `metrics.serviceMonitor.enabled=true` to render a `ServiceMonitor`
 See [`values.yaml`](values.yaml) for all options, validated against
 [`values.schema.json`](values.schema.json).
 
+`manifest.domains` (BRC-148 per-domain plane descriptors → `DOMAINS` env)
+requires `image.tag` >= 0.3.0; the default `appVersion` image ignores
+`DOMAINS`.
+
 ### Logging & tracing
 
 `manifest.logFormat` (`json` default for this daemon | `text`) → `LOG_FORMAT`,
@@ -92,6 +96,20 @@ control-plane traces. See the
 
 See the [SSM Support Plan](https://github.com/lightwebinc/bsv-multicast/blob/main/DESIGN.md#source-specific-multicast-ssm)
 for fabric prerequisites.
+
+### Pilot mode & live re-sharding
+
+`manifest.pilotOnly` marks the announcement as a pilot manifest
+(`Flags.PilotOnly` — desired fleet state, implies authoritative), and
+`manifest.successor.*` emits the BRC-139 Successor block announcing a
+re-shard generation transition. Both depend on consumer-side settings:
+pilot replicas must meet the consumers' `-pilot-quorum` (default 2),
+and consumers act on the Successor block only with `-live-resharding`
+enabled. See the
+[Pilot mode](https://github.com/lightwebinc/shard-manifest/blob/main/docs/configuration.md#pilot-mode-brc-139-auto-shard-config)
+and
+[Live re-sharding](https://github.com/lightwebinc/shard-manifest/blob/main/docs/configuration.md#live-re-sharding-brc-139-successor-block)
+sections of the shard-manifest configuration docs.
 
 ## License
 

@@ -27,13 +27,7 @@ annotations:
   artifacthub.io/license: Apache-2.0
   artifacthub.io/changes: |
     - kind: added
-      description: install fails fast when sourceMode=ssm and manifest.publishers is empty (was CrashLoopBackOff)
-    - kind: changed
-      description: README documents the ssm default sourceMode (asm = lab fallback) and a working quick start
-    - kind: changed
-      description: values.yaml doc-link comments repointed to shard-common/docs/logging.md and DESIGN.md SSM section
-    - kind: changed
-      description: appVersion 0.2.4 (shard-common v0.14.3)
+      description: manifest.domains (BRC-148 per-domain plane descriptors → DOMAINS env; requires image.tag >= 0.3.0)
     - kind: added
       description: manifest.pilotOnly (Flags.PilotOnly — listener auto-join unions groups from pilot manifests only)
     - kind: added
