@@ -14,7 +14,7 @@ informational and does not subscribe to or interpret data-plane traffic.
 
 ```bash
 helm install my-manifest oci://ghcr.io/lightwebinc/charts/shard-manifest \
-  --version 0.3.1 \
+  --version 0.3.3 \
   --namespace bsv-mcast --create-namespace \
   --set manifest.shardBits=4 \
   --set manifest.joinedGroups=all \
