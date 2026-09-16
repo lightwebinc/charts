@@ -3,8 +3,10 @@
 # The application is a set of CLI tools (subtx-gen, send-anchor-frame,
 # send-block-announce, send-subtree-data, send-subtree-push, send-block-push).
 # The chart selects which binary to run via `mode` and translates the matching
-# args block into the container's command. Binaries accept flags only — there
-# are no environment variables.
+# args block into the container's command. Binaries are configured by flags;
+# the only env var they read is LOG_FORMAT (rendered from logFormat below).
+# Not modelled: subtx-gen -tcp (TCP submission lane; the chart's subtx-gen
+# submits over UDP, which the binary marks deprecated).
 
 # Binary selector — choose one of:
 #   subtx-gen            traffic generator (BRC-124/128 frames)
@@ -135,7 +137,7 @@ sendSubtreePush:
   duration: "0s"
   nodes: 16
   coinbasePlaceholder: true  # first subtree of a block carries the 0xFF×32 leaf
-  seed: 0
+  seed: 0                    # string label for deterministic hashes; 0 = omit (binary default "subtree-push")
   logHashes: false
 
 # send-block-push — BRC-144 block push objects.
@@ -147,8 +149,8 @@ sendBlockPush:
   subtrees: 4
   coinbaseSize: 0
   bumpSize: 0
-  heightStart: 0
-  seed: 0
+  heightStart: 0             # 0 = omit (binary default 800000)
+  seed: 0                    # string label for deterministic hashes; 0 = omit (binary default "block-push")
   logHashes: false
 
 job:

@@ -21,14 +21,14 @@ The chart packages a single multi-binary image and selects the binary via `.Valu
 
 The `send-subtree-push` / `send-block-push` binaries are packaged in images built from `v0.2.10` on — the chart's default image (`appVersion`) includes them, along with `tunnel-sink`. Only an older explicit `image.tag` pin lacks them.
 
-The binaries accept **CLI flags only** (no environment variables). The chart translates the matching `*Args` block from `values.yaml` into the container's `command` and `args`. Zero / empty values are omitted so the binary defaults apply. Boolean `false` is likewise omitted, so flags whose binary default is `true` (`sendBlockAnnounce.coinbase`, `sendSubtreePush.coinbasePlaceholder`) cannot be disabled through the chart.
+The binaries are configured by **CLI flags**; the only environment variable they read is `LOG_FORMAT` (rendered from `logFormat`). The chart translates the matching `*Args` block from `values.yaml` into the container's `command` and `args`. Zero / empty values are omitted so the binary defaults apply. Boolean `false` is likewise omitted, so flags whose binary default is `true` (`sendBlockAnnounce.coinbase`, `sendSubtreePush.coinbasePlaceholder`) cannot be disabled through the chart.
 
 ## Install
 
 ```bash
 # Continuous traffic generator (Deployment) — emits 1000 pps until killed
 helm install gen oci://ghcr.io/lightwebinc/charts/subtx-generator \
-  --version 0.3.2 -n bsv-mcast \
+  --version 0.3.4 -n bsv-mcast \
   --set mode=subtx-gen \
   --set args.addr=[fd20::20]:8725 \
   --set subtxGen.pps=1000 --set subtxGen.duration=0s
@@ -54,7 +54,7 @@ The generator is a pure UDP/TCP client toward the proxy — no MLD join, no mult
 
 ## Values reference
 
-See [`values.yaml`](values.yaml). Every flag of the six packaged binaries is exposed under per-mode blocks:
+See [`values.yaml`](values.yaml). The flags of the six packaged binaries are exposed under per-mode blocks (one exception: `subtx-gen -tcp`, the TCP submission lane, is not modelled — the chart's `subtx-gen` always submits over UDP, which the binary's own help text marks deprecated):
 
 - `args` — shared flags (`addr`)
 - `subtxGen` — full `subtx-gen` surface (frame version, payload format, gap injection, BRC-127 announce, txid corruption, direct-multicast SSM mode)
