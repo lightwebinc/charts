@@ -27,6 +27,7 @@
     "subtxGen": {
       "type": "object",
       "properties": {
+        "tcp":           { "type": "boolean" },
         "shardBits":     { "type": "integer", "minimum": 1, "maximum": 12 },
         "frameVersion":  { "type": "integer", "minimum": 1, "maximum": 2 },
         "payloadFormat": { "type": "string", "enum": ["brc124", "brc128", "mixed"] },

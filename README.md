@@ -54,16 +54,25 @@ The generator is a pure UDP/TCP client toward the proxy — no MLD join, no mult
 
 ## Values reference
 
-See [`values.yaml`](values.yaml). The flags of the six packaged binaries are exposed under per-mode blocks (one exception: `subtx-gen -tcp`, the TCP submission lane, is not modelled — the chart's `subtx-gen` always submits over UDP, which the binary's own help text marks deprecated):
+See [`values.yaml`](values.yaml). The flags of the six packaged binaries are exposed under per-mode blocks:
 
 - `args` — shared flags (`addr`)
-- `subtxGen` — full `subtx-gen` surface (frame version, payload format, gap injection, BRC-127 announce, txid corruption, direct-multicast SSM mode)
+- `subtxGen` — full `subtx-gen` surface (submission transport, frame version, payload format, gap injection, BRC-127 announce, txid corruption, direct-multicast SSM mode)
 - `sendAnchorFrame` — BRC-134 sender
 - `sendBlockAnnounce` — BRC-131 sender
 - `sendSubtreeData` — BRC-132 sender
 - `sendSubtreePush` — BRC-143 subtree push (proxy lane 8726)
 - `sendBlockPush` — BRC-144 block push (proxy lane 8727)
 - `logFormat` (`text`|`json`, schema-validated) → `LOG_FORMAT`: the generator now logs through `shard-common/logging`; set `json` to match the rest of the fleet. See the [Unified Logging Plan](https://github.com/lightwebinc/shard-common/blob/main/docs/logging.md).
+
+### Submission transport (subtxGen)
+
+`subtxGen.tcp` selects the submission lane: `false` (default) submits over UDP,
+`true` renders `-tcp` and submits over the standard TCP lane — `args.addr` is
+then a TCP target (a stream of BRC frames, no envelope). The binary marks UDP
+submission deprecated, so prefer `tcp: true` for new installs; the default is
+unchanged so upgrading the chart moves no existing release. It applies to
+`subtxGen.mode: unicast` only — the binary ignores it under `direct-multicast`.
 
 ### direct-multicast mode (subtxGen)
 

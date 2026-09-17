@@ -94,6 +94,7 @@ to avoid relying on regex backreference behaviour across Sprig versions.
 {{- include "subtx-generator.emitFlag" (dict "name" "addr" "v" .Values.args.addr) -}}
 {{- if eq .Values.mode "subtx-gen" -}}
 {{- $a := .Values.subtxGen -}}
+{{- include "subtx-generator.emitFlag" (dict "name" "tcp"                   "v" $a.tcp) -}}
 {{- include "subtx-generator.emitFlag" (dict "name" "frame-version"         "v" $a.frameVersion) -}}
 {{- include "subtx-generator.emitFlag" (dict "name" "shard-bits"            "v" $a.shardBits) -}}
 {{- include "subtx-generator.emitFlag" (dict "name" "subtrees"              "v" $a.subtrees) -}}

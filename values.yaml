@@ -5,8 +5,6 @@
 # The chart selects which binary to run via `mode` and translates the matching
 # args block into the container's command. Binaries are configured by flags;
 # the only env var they read is LOG_FORMAT (rendered from logFormat below).
-# Not modelled: subtx-gen -tcp (TCP submission lane; the chart's subtx-gen
-# submits over UDP, which the binary marks deprecated).
 
 # Binary selector — choose one of:
 #   subtx-gen            traffic generator (BRC-124/128 frames)
@@ -66,6 +64,12 @@ args:
 
 # subtx-gen — full traffic generator
 subtxGen:
+  # Submit over TCP — args.addr is then a TCP target (the standard 8725
+  # submission lane: a stream of BRC frames, no envelope) — instead of UDP,
+  # which the binary marks deprecated. false is the chart's previous behaviour,
+  # so upgrading this chart changes no existing install. mode: unicast only;
+  # the binary ignores it under direct-multicast.
+  tcp: false
   frameVersion: 2
   shardBits: 2
   subtrees: 8
