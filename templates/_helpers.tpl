@@ -208,8 +208,6 @@ to defend against schema bypass.
 {{- end }}
 - name: SUBTREE_DATA_ENABLED
   value: {{ .Values.config.subtreeDataEnabled | quote }}
-- name: SUBTREE_DATA_VERIFY_MERKLE
-  value: {{ .Values.config.subtreeDataVerifyMerkle | quote }}
 - name: EGRESS_DEDUP_CAP
   value: {{ .Values.config.egressDedupCap | quote }}
 - name: EGRESS_DEDUP_TTL

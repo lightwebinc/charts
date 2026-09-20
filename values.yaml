@@ -173,7 +173,6 @@ config:
 
   # BRC-132 subtree data
   subtreeDataEnabled: false
-  subtreeDataVerifyMerkle: false
 
   # Egress sliding-window dedup (keyed by HashKey∥SeqNum)
   egressDedupCap: 0
