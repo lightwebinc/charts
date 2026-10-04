@@ -17,6 +17,6 @@ jobs:
   # Render scenarios: ci/*.yaml (+ .expect assertions), examples/*.yaml, and
   # ci/reject/*.yaml for renders that must fail. See lightwebinc/ci helm-lint.
   lint:
-    uses: lightwebinc/ci/.github/workflows/helm-lint.yml@e6098fcd1c4ecf7c0163e8599b4b3fb957562295 # main
+    uses: lightwebinc/ci/.github/workflows/helm-lint.yml@9611b3eb4844452ec05c941a05ca3ccb50de15e8 # main
     with:
       set: --set config.bindSource=2001:db8::21
