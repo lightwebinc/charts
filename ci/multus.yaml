@@ -1,0 +1,3 @@
+networking:
+  multus:
+    fabricIPv6: fd20::21/64
