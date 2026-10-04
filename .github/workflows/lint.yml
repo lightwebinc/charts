@@ -14,11 +14,9 @@ permissions:
   contents: read
 
 jobs:
-  # Render scenarios live in ci/*.yaml and examples/*.yaml. The defaults use
-  # sourceMode=ssm with an empty bindSource; the schema does not enforce the
-  # pairing (the binary fails fast at startup instead), so lint and the default
-  # render set a per-replica bindSource.
+  # Render scenarios: ci/*.yaml (+ .expect assertions), examples/*.yaml, and
+  # ci/reject/*.yaml for renders that must fail. See lightwebinc/ci helm-lint.
   lint:
-    uses: lightwebinc/ci/.github/workflows/helm-lint.yml@3f438e60ade351107a3d1601955ebbf34de8caf1 # v0.1.0
+    uses: lightwebinc/ci/.github/workflows/helm-lint.yml@e6098fcd1c4ecf7c0163e8599b4b3fb957562295 # main
     with:
       set: --set config.bindSource=2001:db8::21
