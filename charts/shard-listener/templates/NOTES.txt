@@ -1,0 +1,21 @@
+{{ include "shard-listener.fullname" . }} installed in namespace {{ .Release.Namespace }} as a {{ .Values.workloadType }}.
+
+Networking mode: {{ .Values.networking.mode }}
+{{- if eq .Values.networking.mode "multus" }}
+  Multus NAD: {{ .Values.networking.multus.namespace }}/{{ .Values.networking.multus.networkName }}
+  Pod fabric interface: {{ .Values.networking.multus.interface }}
+{{- else if eq .Values.networking.mode "host" }}
+  hostNetwork enabled. MULTICAST_IF on host: {{ .Values.config.multicastIf }}
+{{- end }}
+
+NUM_WORKERS is hardcoded to 1 (Linux SO_REUSEPORT multicast duplication constraint).
+
+{{- if not .Values.config.retryEndpoints }}
+
+NOTE: config.retryEndpoints is empty. NACK recovery will rely entirely on beacon
+discovery (BRC-126). Set retryEndpoints explicitly for deterministic startup.
+{{- end }}
+
+Metrics: http://{{ include "shard-listener.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.metricsPort }}{{ .Values.metrics.path }}
+
+See https://github.com/lightwebinc/shard-listener-helm for the full values reference.

@@ -1,0 +1,65 @@
+apiVersion: v2
+name: shard-listener
+description: IPv6 multicast shard subscriber for the Bitcoin transaction distribution network
+type: application
+version: 0.8.0
+# appVersion MUST equal a tag published on ghcr.io/lightwebinc/shard-listener
+# (the chart's tag:"" default pulls this). Images are published manually via the
+# binary repo's image-publish.yml workflow; bump appVersion ONLY in lockstep with
+# an image publish — binary git tags are NOT image tags until published.
+appVersion: "1.28.0"
+kubeVersion: ">= 1.27.0-0"
+keywords:
+  - bitcoin
+  - bsv
+  - multicast
+  - brc-124
+  - brc-126
+  - brc-128
+home: https://github.com/lightwebinc/shard-listener
+sources:
+  - https://github.com/lightwebinc/shard-listener
+  - https://github.com/lightwebinc/shard-listener-helm
+maintainers:
+  - name: lightwebinc
+    url: https://github.com/lightwebinc
+icon: https://raw.githubusercontent.com/lightwebinc/bsv-multicast/main/.assets/icon.svg
+annotations:
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/changes: |
+    - kind: changed
+      description: appVersion 1.27.0 — first image published since 1.24.1; the default image derives control-plane groups from the source mode, strips subtree egress to a BRC-143 object and block egress to a BRC-144 object, adds BEEF filter observation and gap-abandon reasons, and counts fragments dropped over the reassembly bound (bsl_reassembly_oversize_fragments_total). Built with Go 1.27.1.
+    - kind: fixed
+      description: appVersion 1.22.1 — a late NACK repair no longer reads as a proxy restart (which flushed pending gaps to unrecovered, re-baselined the flow and NACKed already-received frames), and NACK datagrams that fail to send are now visible as bsl_nack_send_errors_total{endpoint} instead of looking like a timeout
+    - kind: changed
+      description: appVersion 1.21.0 — first image published since 1.8.0; the default image now honours the BEEF_* envs (>= 1.10.0/1.12.0), block-PoW default-on (>= 1.16.0), the NACK tail-probe family (>= 1.15.0) and -rebucket-relay (>= 1.10.1)
+    - kind: changed
+      description: values/README annotate the minimum image each feature family needs when image.tag pins older than appVersion
+    - kind: added
+      description: Initial chart scaffold
+    - kind: added
+      description: config.autoShardConfig keys (BRC-139 manifest consumer)
+    - kind: added
+      description: config.localSource (own-source SSM join loop guard for collapsed nodes)
+    - kind: added
+      description: config.mode (P3b role split — collapsed|receiver|delivery); appVersion 1.6.9
+    - kind: added
+      description: config.deliveryAddrs (receiver-mode delivery fan-out target set)
+    - kind: changed
+      description: appVersion 1.7.1 (NACK re-baseline on emitter change + transition-tail recovery)
+    - kind: changed
+      description: config.stripHeader default now true (matches the binary default)
+    - kind: changed
+      description: values.schema.json caps config.shardBits at 12 (BRC-129 shard zoning)
+    - kind: changed
+      description: appVersion 1.8.0 (shard-bits validator 1-12; shard-common v0.14.3)
+    - kind: added
+      description: config.requireBlockPow / config.minPowBits (REQUIRE_BLOCK_POW / MIN_POW_BITS block-PoW gate; default ON, matching the binary default from image 1.16.0)
+    - kind: fixed
+      description: BEEF_SHARD_BITS no longer widens an explicit 0 to 4 (Go-template default treats 0 as empty)
+    - kind: added
+      description: BEEF_MAX_OBJECT_BYTES is now rendered; config.beefMaxObjectBytes previously had no effect (honoured by image 1.12.0 and later)
+    - kind: fixed
+      description: EGRESS_DEDUP_LOCAL_CAP / INGRESS_SET_LOCAL_CAP render as integers, not scientific notation
+    - kind: changed
+      description: appVersion 1.24.1 — the default image adds the retry-tee receive mirror and aligns payload verification with the proxy (shard-common v0.19.4, BSD netjoin). Built with Go 1.27.1.

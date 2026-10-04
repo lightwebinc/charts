@@ -1,0 +1,359 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "shard-listener values",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "workloadType": {
+      "type": "string",
+      "enum": [
+        "Deployment",
+        "DaemonSet"
+      ]
+    },
+    "replicaCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "terminationGracePeriodSeconds": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "resources": {
+      "type": "object"
+    },
+    "podSecurityContext": {
+      "type": "object"
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pullPolicy": {
+          "type": "string",
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ]
+        },
+        "tag": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "repository",
+        "pullPolicy"
+      ]
+    },
+    "networking": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "multus",
+            "host",
+            "unicast"
+          ]
+        }
+      },
+      "required": [
+        "mode"
+      ]
+    },
+    "config": {
+      "type": "object",
+      "properties": {
+        "listenPort": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "shardBits": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "mcScope": {
+          "type": "string",
+          "enum": [
+            "link",
+            "site",
+            "org",
+            "global"
+          ]
+        },
+        "sourceMode": {
+          "type": "string",
+          "enum": [
+            "asm",
+            "ssm"
+          ]
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "collapsed",
+            "receiver",
+            "delivery"
+          ]
+        },
+        "deliveryAddrs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ssmBootstrap": {
+          "type": "object",
+          "properties": {
+            "manifest": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "beacon": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "subtreeAnnounce": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "ssmPublishersStatic": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ssmBootstrapRefresh": {
+          "type": "string"
+        },
+        "localSource": {
+          "type": "string"
+        },
+        "egressProto": {
+          "type": "string",
+          "enum": [
+            "udp",
+            "tcp"
+          ]
+        },
+        "headerEgressProto": {
+          "type": "string",
+          "enum": [
+            "udp",
+            "tcp"
+          ]
+        },
+        "beaconScope": {
+          "type": "string",
+          "enum": [
+            "link",
+            "site",
+            "org",
+            "global"
+          ]
+        },
+        "numWorkers": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1,
+          "description": "MUST be 1; multiple workers cause SO_REUSEPORT multicast duplication"
+        },
+        "requireBlockPow": {
+          "type": "boolean",
+          "description": "REQUIRE_BLOCK_POW — gate BRC-131 block announces on header PoW and drop any deprecated standalone BRC-133 coinbase frame before fan-out. Default true (matches the binary); BRC-135 header egress is fed downstream of this gate."
+        },
+        "minPowBits": {
+          "type": "string",
+          "pattern": "^(0[xX][0-9a-fA-F]{1,8}|[0-9]{1,10})$",
+          "description": "MIN_POW_BITS — PoW difficulty floor for requireBlockPow in Bitcoin compact nBits. \"0\" = header self-consistency only (default). mainnet/testnet 0x1d00ffff, devnet 0x207fffff. Hex MUST carry the 0x prefix — a bare \"1d00ffff\" is parsed as decimal and fails at startup."
+        },
+        "debug": {
+          "type": "boolean"
+        },
+        "logFormat": {
+          "type": "string",
+          "enum": [
+            "text",
+            "json"
+          ]
+        },
+        "logLevel": {
+          "type": "string",
+          "enum": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ]
+        },
+        "traceSampling": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "egressDedupCap": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "egressDedupTtl": {
+          "type": "string"
+        },
+        "deploymentId": {
+          "type": "string"
+        },
+        "nodeId": {
+          "type": "string"
+        },
+        "egressDedupBackend": {
+          "type": "string",
+          "enum": [
+            "",
+            "memory",
+            "redis",
+            "aerospike",
+            "none"
+          ]
+        },
+        "egressDedupRedisAddr": {
+          "type": "string"
+        },
+        "egressDedupAerospikeHosts": {
+          "type": "string"
+        },
+        "egressDedupAerospikeNamespace": {
+          "type": "string"
+        },
+        "egressDedupAerospikeSet": {
+          "type": "string"
+        },
+        "egressDedupPrefix": {
+          "type": "string"
+        },
+        "egressDedupTtlRedis": {
+          "type": "string"
+        },
+        "egressDedupLocalCap": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ingressSetBackend": {
+          "type": "string",
+          "enum": [
+            "",
+            "memory",
+            "redis",
+            "aerospike",
+            "none"
+          ]
+        },
+        "ingressSetRedisAddr": {
+          "type": "string"
+        },
+        "ingressSetAerospikeHosts": {
+          "type": "string"
+        },
+        "ingressSetAerospikeNamespace": {
+          "type": "string"
+        },
+        "ingressSetAerospikeSet": {
+          "type": "string"
+        },
+        "ingressSetPrefix": {
+          "type": "string"
+        },
+        "ingressSetTtl": {
+          "type": "string"
+        },
+        "ingressSetLocalCap": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "txidDedupAddr": {
+          "type": "string"
+        },
+        "txidDedupPrefix": {
+          "type": "string"
+        },
+        "txidDedupTtl": {
+          "type": "string"
+        },
+        "autoShardConfig": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "bootstrap": {
+              "type": "string",
+              "enum": [
+                "optional",
+                "required"
+              ]
+            },
+            "pilotQuorum": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "pilotHysteresis": {
+              "type": "string"
+            },
+            "shardIncludeFromManifest": {
+              "type": "boolean"
+            },
+            "liveResharding": {
+              "type": "boolean"
+            },
+            "bridgingWindow": {
+              "type": "string"
+            }
+          }
+        },
+        "beefTopics": {
+          "type": "string",
+          "description": "comma list of overlay topic NAMES or 64-hex TopicIDs; derives band joins + the topic filter"
+        },
+        "beefGroups": {
+          "type": "string",
+          "description": "comma list of plane-relative band group indices (aggregator mode, no topic restriction)"
+        },
+        "beefShardBits": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 12,
+          "description": "BRC-148 plane width (band 0x1000 + 2^bits groups); 0 = single-group plane. MUST match the ingress proxies."
+        },
+        "beefVersions": {
+          "type": "string",
+          "description": "comma list of accepted BEEF version words as 8-hex (e.g. 0100BEEF); empty = all encodings"
+        },
+        "beefVerifyContent": {
+          "type": "boolean",
+          "description": "recompute SHA-256d(payload) and drop on ContentID mismatch (debug/test)"
+        },
+        "beefMaxObjectBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 80740352,
+          "description": "D9 per-object byte bound (BRC-149 ingress MUST). Default 1 MiB. MUST match across proxy/listener/retry. Max is the ~77 MiB structural ceiling (uint16 FragTotal at the 1280-byte floor)."
+        }
+      }
+    }
+  }
+}

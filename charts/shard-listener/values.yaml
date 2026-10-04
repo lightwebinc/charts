@@ -1,0 +1,334 @@
+# Default values for shard-listener.
+# Most binary flags are exposed under .config (advanced ones empty/disabled by
+# default); the NACK tail-probe family, -rebucket-relay and -retry-tee
+# (RETRY_TEE, image >= 1.24.1) are extraEnv-only.
+
+# When workloadType=Deployment, replicaCount controls replicas.
+# When workloadType=DaemonSet, replicaCount is ignored (one pod per matching node).
+replicaCount: 1
+
+# Deployment | DaemonSet.
+# WARNING: the default below (Deployment, replicaCount=1) is for single-node test /
+# lab use only. It does NOT provide fabric coverage — a single listener cannot receive
+# multicast on every node. For production set workloadType=DaemonSet and constrain it to
+# fabric nodes with nodeSelector/affinity (a bare DaemonSet schedules on every node,
+# including control-plane). See multicast-kube-infra docs/operations
+# (https://github.com/lightwebinc/multicast-kube-infra/blob/main/docs/operations.md)
+# for the production listener topology.
+workloadType: Deployment
+
+# Pod termination grace. MUST be >= config.drainTimeout (below), otherwise Kubernetes
+# SIGKILLs the pod before in-flight NACK recovery finishes. Empty = cluster default (30s).
+# Raise this in lockstep whenever you raise drainTimeout.
+terminationGracePeriodSeconds: 30
+
+image:
+  repository: ghcr.io/lightwebinc/shard-listener
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations: {}
+podLabels: {}
+# Matches the distroless/static:nonroot image (uid 65532). Enforces nonroot even if
+# the image is overridden. NET_ADMIN is granted below at the container level, which is
+# compatible with running as nonroot.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+# MLD join + NACK socket on fabric NIC require NET_ADMIN.
+securityContext:
+  capabilities:
+    add: ["NET_ADMIN"]
+
+networking:
+  mode: multus
+  multus:
+    networkName: mcast-fabric
+    namespace: bsv-mcast
+    fabricIPv6: ""
+    interface: net1
+  host:
+    dnsPolicy: ClusterFirstWithHostNet
+
+# Most flags in shard-listener/config/config.go; the NACK tail-probe family
+# (-nack-backoff-base, -nack-tail-probe*, -nack-max-flows, -nack-max-forward-jump)
+# -rebucket-relay and -retry-tee (RETRY_TEE) are settable via extraEnv (all
+# honoured by the default appVersion; on older pins -nack-tail-probe* needs
+# image >= 1.15.0, -rebucket-relay >= 1.10.1 and -retry-tee >= 1.24.1).
+config:
+  multicastIf: "eth0"
+  listenPort: 9001
+  shardBits: 2
+  mcScope: "site"
+  mcGroupId: "0x000B"
+  shardInclude: ""
+  subtreeInclude: ""
+  # BRC-148 BEEF object plane (receiver/collapsed). The listener joins the plane
+  # band (0x1000+) when topics and/or explicit groups are set. beefTopics is a
+  # comma list of overlay topic NAMES (or 64-hex TopicIDs) that derives band joins
+  # and the topic filter; beefGroups is a comma list of plane-relative indices for
+  # aggregator mode (no topic restriction). beefShardBits must match the proxy.
+  # beefVersions gates accepted encodings (comma of beef|beefv2|atomic; empty=all).
+  # beefVerifyContent verifies ContentID==SHA-256d(object) before fan-out (debug).
+  # Requires image >= 1.10.0, beefMaxObjectBytes >= 1.12.0 (both satisfied by
+  # the default appVersion); older pins ignore the BEEF_* env vars.
+  beefTopics: ""
+  beefGroups: ""
+  beefShardBits: 0
+  beefMaxObjectBytes: 1048576  # D9 bound; MUST be >= the largest object any ingress admits
+  beefVersions: ""
+  beefVerifyContent: false
+  subtreeExclude: ""
+
+  # Role split (P3b): collapsed (default; join fabric (S,G) + gap/NACK + fan-out)
+  # | receiver (mcast half) | delivery (consumer half: unicast-ingest + fan-out,
+  # NO mcast join, NO gap/NACK — receives raw frames from a receiver over unicast).
+  mode: "collapsed"
+
+  # receiver mode only: the delivery-tier host:port set every demuxed frame is
+  # fanned out to (envelope-preserving). Empty falls back to the single egressAddr.
+  # e.g. ["dlv-a.internal:9001", "dlv-b.internal:9001"]
+  deliveryAddrs: []
+
+  # SSM (RFC 4607). See
+  # https://github.com/lightwebinc/bsv-multicast/blob/main/DESIGN.md#source-specific-multicast-ssm
+  # sourceMode "ssm" requires at least one of ssmBootstrap.* or
+  # ssmPublishersStatic. Each list entry is an IPv6 literal or DNS name;
+  # the bootstrap.Resolver loop resolves AAAA records every ssmBootstrapRefresh.
+  sourceMode: "ssm"
+  ssmBootstrap:
+    manifest: []         # ["shard-manifest-headless.svc.cluster.local"]
+    beacon: []           # ["retry-endpoint-headless.svc.cluster.local"]
+    subtreeAnnounce: []
+  ssmPublishersStatic: []
+  ssmBootstrapRefresh: "30s"
+
+  # localSource: the co-located proxy's BIND_SOURCE on a collapsed node. Excluded
+  # from every roster-driven (S,G) join — joining the node's own source on the PIM
+  # interface installs an iif==oif mroute and loops originated frames until
+  # hop-limit death (~60x amplification). Leave empty unless proxy and listener
+  # are co-located on the same node; this listener will not receive own-node
+  # frames via multicast when set.
+  localSource: ""
+
+  # Downstream egress
+  egressAddr: "127.0.0.1:9100"
+  egressProto: "udp"
+  # true (binary default): forward payload-only (raw BSV tx) — what a downstream
+  # node/miner expects. Set false only when the downstream re-reads whole frames
+  # (e.g. domain bridging).
+  stripHeader: true
+
+  # Multicast egress (domain bridging)
+  mcEgressEnabled: false
+  mcEgressIface: ""
+  mcEgressPort: 0
+  mcEgressScope: ""
+  mcEgressGroupId: ""
+  mcEgressHopLimit: 1
+
+  # Block header egress (BRC-135 SPV; 172-byte FrameVerV7 frames emitted from BRC-131 BlockAnnounce)
+  headerEgressEnabled: false
+  headerEgressAddr: "127.0.0.1:9101"
+  headerEgressProto: "udp"
+  headerMcEgressEnabled: false
+  headerMcEgressIface: ""
+  headerMcEgressPort: 0
+  headerMcEgressScope: ""
+  headerMcEgressGroupId: ""
+  headerMcEgressHopLimit: 1
+
+  # NACK / retry
+  retryEndpoints: ""
+  nackJitterMax: "200ms"
+  nackBackoffMax: "5s"
+  nackMaxRetries: 5
+  nackGapTtl: "10m"
+
+  # Beacon (BRC-126) discovery
+  beaconEnabled: true
+  beaconPort: 9300
+  beaconScope: "site"
+
+  # Subtree group announcements (BRC-127)
+  subtreeGroups: ""
+  subtreeGroupDefaultTtl: "900s"
+  announceScope: "site"
+  senderInclude: ""
+  senderExclude: ""
+
+  # BRC-132 subtree data
+  subtreeDataEnabled: false
+
+  # Egress sliding-window dedup (keyed by HashKey∥SeqNum)
+  egressDedupCap: 0
+  egressDedupTtl: "2s"
+
+  # DEPRECATED: prefer the egressDedup* and ingressSet* fields below.
+  # Kept as compatibility aliases; presence triggers a startup warning.
+  txidDedupAddr: ""
+  txidDedupPrefix: ""
+  txidDedupTtl: "0s"
+
+  # Per-deployment egress TxID dedup. HA siblings share deploymentId to
+  # dedup their downstream forward; distinct deploymentIds race independently.
+  # Default deploymentId/nodeId empty → derived from pod hostname at runtime.
+  deploymentId: ""
+  nodeId: ""
+  # Tier-2 backend is modular (shard-common/cache): redis|aerospike|memory|none.
+  # Empty backend infers redis when the matching redisAddr is set, else none.
+  # See shard-common/docs/cache-backend.md
+  egressDedupBackend: ""
+  egressDedupRedisAddr: ""
+  egressDedupAerospikeHosts: ""        # comma-separated host:port
+  egressDedupAerospikeNamespace: "cache"
+  egressDedupAerospikeSet: "bsl-egr"
+  egressDedupPrefix: "bsl:egr:"
+  egressDedupTtlRedis: "60s"
+  egressDedupLocalCap: 1048576
+
+  # Courtesy SETNX into the local proxy's ingress namespace so the proxy
+  # knows a TxID is already on the multicast network. Prefix MUST match
+  # the proxy chart's config.txidDedupPrefix exactly. Leave the backend at
+  # none (and ingressSetRedisAddr empty) to disable. The two stores are
+  # addressed independently — either may use a different backend/endpoint.
+  ingressSetBackend: ""
+  ingressSetRedisAddr: ""
+  ingressSetAerospikeHosts: ""
+  ingressSetAerospikeNamespace: "cache"
+  ingressSetAerospikeSet: "bsp-tx"
+  ingressSetPrefix: "bsp:tx:"
+  ingressSetTtl: "10m"
+  ingressSetLocalCap: 1048576
+
+  # Runtime
+  # numWorkers is HARDCODED to 1 by the chart. Linux SO_REUSEPORT delivers
+  # every multicast datagram to all sockets in the reuseport group; multiple
+  # workers cause N-fold frame duplication. Do not change this.
+  numWorkers: 1
+  verifyPayloadHash: false
+
+  # Block control-plane integrity. requireBlockPow gates BRC-131 block
+  # announces on real header proof-of-work and drops any deprecated standalone
+  # BRC-133 coinbase frame (the coinbase rides inline in the block) before
+  # fan-out — announces arriving over multicast
+  # bypass the local proxy, so the edge re-validates. DEFAULT TRUE, matching the
+  # binary default since image 1.16.0 — the default appVersion satisfies this
+  # (older pins default false; the env is
+  # rendered unconditionally, so the chart value governs either way); BRC-135
+  # header egress is fed downstream of this gate, so turning it off also stops
+  # validating anything the header lane emits.
+  # minPowBits is the difficulty floor in Bitcoin compact nBits: "0" (default)
+  # means header self-consistency only. mainnet/testnet "0x1d00ffff",
+  # devnet "0x207fffff". Hex MUST carry the 0x prefix — a bare "1d00ffff" is
+  # parsed as decimal and the listener refuses to start.
+  requireBlockPow: true       # REQUIRE_BLOCK_POW
+  minPowBits: "0"             # MIN_POW_BITS
+
+  drainTimeout: "0s"
+  debug: false  # deprecated alias for logLevel=debug
+  # Unified logging — see shard-common/docs/logging.md
+  logFormat: "text"   # text (stderr) | json (stdout, for fleet aggregation)
+  logLevel: "info"    # debug|info|warn|error; runtime-togglable via POST /loglevel + SIGHUP
+  traceSampling: 0    # 0..1 trace head sampling (0 = off; exports via otlpEndpoint; control-plane only)
+
+  # Observability
+  metricsAddr: ":9200"
+  instanceId: ""
+  otlpEndpoint: ""
+  otlpInterval: "30s"
+
+  # BRC-139 auto-shard-config consumer (opt-in). See
+  # bsv-multicast/DESIGN.md#automatic-shard-configuration.
+  # When enabled the listener decodes manifests off its beacon socket and
+  # adopts ShardBits/SourceMode (and, with shardIncludeFromManifest, joins
+  # pilot groups via runtime AddGroup/RemoveGroup) once quorum + hysteresis
+  # are met. Manual config above always wins; default off.
+  autoShardConfig:
+    enabled: false                # MANIFEST_CONSUMER_ENABLED — master switch
+    bootstrap: "optional"         # MANIFEST_BOOTSTRAP — optional | required (fail-closed)
+    pilotQuorum: 2                # PILOT_QUORUM — min distinct authoritative announcers
+    pilotHysteresis: "0s"         # PILOT_HYSTERESIS — 0 ⇒ 2 × AnnounceInterval
+    shardIncludeFromManifest: false  # SHARD_INCLUDE_FROM_MANIFEST — additive auto-join: union(shardInclude, pilot groups)
+    liveResharding: false         # LIVE_RESHARDING — bridging vs restart-on-adopt
+    bridgingWindow: "0s"          # BRIDGING_WINDOW — 0 ⇒ honour pilot TransitionEpoch
+
+service:
+  type: ClusterIP
+  metricsPort: 9200
+
+metrics:
+  enabled: true
+  path: /metrics
+  port: 9200
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s
+    labels: {}
+    relabelings: []
+    metricRelabelings: []
+
+probes:
+  readiness:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  liveness:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+# Datapath component (multicast RX + reassembly + NACK recovery).
+# CPU-bound under load — conservative starting points; tune against your own
+# benchmark. Empty ({}) yields BestEffort QoS and no admission control.
+# Note: when running as a DaemonSet these apply per node.
+resources:
+  requests:
+    cpu: 500m
+    memory: 256Mi
+  limits:
+    cpu: "2"
+    memory: 512Mi
+nodeSelector: {}
+tolerations: []
+affinity: {}
+priorityClassName: ""
+topologySpreadConstraints: []
+
+# DaemonSet update strategy (only when workloadType=DaemonSet).
+updateStrategy: {}
+# Example:
+# updateStrategy:
+#   type: RollingUpdate
+#   rollingUpdate:
+#     maxUnavailable: 1
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+  # maxUnavailable: ""
+
+networkPolicy:
+  enabled: false
+  ingressFrom: []
+
+extraEnv: []
