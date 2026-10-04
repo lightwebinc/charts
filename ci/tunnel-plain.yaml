@@ -1,0 +1,6 @@
+# Pod-attached tunnel as an ordinary sidecar (nativeSidecar off, pre-1.29 cluster).
+tunnel:
+  enabled: true
+  configSecret:
+    name: bridge-wg
+  nativeSidecar: false
