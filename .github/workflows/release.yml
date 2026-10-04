@@ -18,7 +18,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: lightwebinc/ci/.github/workflows/helm-release.yml@b49f597d563387ae78f599ee22673124a602e736 # main
+    uses: lightwebinc/ci/.github/workflows/helm-release.yml@b49f597d563387ae78f599ee22673124a602e736 # v0.2.0
     with:
       environment: ""
       dry-run: ${{ inputs.dry-run }}

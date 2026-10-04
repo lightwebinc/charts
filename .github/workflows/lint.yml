@@ -17,7 +17,7 @@ jobs:
   # Render scenarios: ci/*.yaml (+ .expect assertions), examples/*.yaml, and
   # ci/reject/*.yaml for renders that must fail. See lightwebinc/ci helm-lint.
   lint:
-    uses: lightwebinc/ci/.github/workflows/helm-lint.yml@b49f597d563387ae78f599ee22673124a602e736 # main
+    uses: lightwebinc/ci/.github/workflows/helm-lint.yml@b49f597d563387ae78f599ee22673124a602e736 # v0.2.0
     with:
       # The examples leave peerId empty on purpose (it is per instance and must
       # never be copied between bridges), so their renders supply a synthetic one.
