@@ -1,0 +1,42 @@
+# Dedicated data-plane performance preset.
+#
+#   helm install sp . -f examples/perf-dataplane.yaml
+#
+# Pins the proxy's kernel packet loop (recvmmsg/sendmmsg) to exclusive,
+# NUMA-local cores for stable high-rate forwarding. Requires nodes with:
+#   - kubelet CPU Manager `static` policy + Topology Manager `single-numa-node`
+#     (plus reserved system cores);
+#   - a dedicated fabric NIC exposed to the pod (macvlan or an SR-IOV VF) via a
+#     NetworkAttachmentDefinition, on the same NUMA node as the pinned cores.
+# Compose with examples/anycast-ingress.yaml for HA ingress.
+
+networking:
+  mode: multus
+  multus:
+    networkName: mcast-fabric
+    namespace: bsv-mcast
+    interface: net1
+
+config:
+  # SSM default: bind a distinct source IPv6 per replica — use the pod's fabric
+  # address (doc-safe placeholder here; set per release).
+  bindSource: "2001:db8::42"
+
+# Integer cpu + equal requests/limits ⇒ Guaranteed QoS ⇒ exclusive NUMA-local
+# cores from CPU Manager static. Size cpu to the core count you can dedicate;
+# benchmark on your own hardware before high-rate production use.
+resources:
+  requests:
+    cpu: "4"
+    memory: 2Gi
+  limits:
+    cpu: "4"
+    memory: 2Gi
+
+# Land only on the dedicated data-plane pool; tolerate its taint.
+nodeSelector:
+  node-role/dataplane: ""
+tolerations:
+  - key: dataplane
+    operator: Exists
+    effect: NoSchedule

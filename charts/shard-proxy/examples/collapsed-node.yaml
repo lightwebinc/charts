@@ -1,0 +1,51 @@
+# Collapsed-node preset: shard-proxy as a hostNetwork pod, sharing the host with
+# a co-resident listener and the kernel multicast fabric (e.g. ip6gre tunnels +
+# an mroute daemon). The pod binds the host netns directly. Pin per region with
+# your topology label, and tolerate the data-plane taint if the node pool is
+# fenced.
+#
+#   helm install shard-proxy-us . -f examples/collapsed-node.yaml \
+#     --set nodeSelector."topology\.kubernetes\.io/region"=us
+networking:
+  mode: host
+  host:
+    dnsPolicy: ClusterFirstWithHostNet
+
+config:
+  # NOT :9100 — the Prometheus node-exporter DaemonSet owns hostPort 9100 on every
+  # k8s node, and a hostNetwork pod binding 9100 would collide (FailedScheduling /
+  # bind conflict). The bind addr (env) and the declared port (below) must agree.
+  metricsAddr: ":9110"
+  # Authoritatively stamp the BRC-129 HashKey from the observed per-consumer source IP
+  # (own-traffic exclusion). true because the pod sees real source addresses
+  # (hostNetwork, no source-rewriting LB in front).
+  stampSource: true
+  # Collapsed node: loop ON so the kernel MFC forwards the proxy's locally-emitted
+  # multicast to the co-resident listener (mc-local) + the fabric tunnels; raised hop
+  # limit so it survives the inter-region tunnel hops (default 1 dies on first hop).
+  egressMulticastLoop: true
+  egressHoplimit: 16
+  # SSM default: bind a distinct source IPv6 per node — use the host's fabric
+  # address (doc-safe placeholder here; set per release).
+  bindSource: "2001:db8::21"
+
+# The declared container/host port + Service/scrape port must match metricsAddr.
+service:
+  metricsPort: 9110
+metrics:
+  port: 9110
+
+# Raw multicast emit needs NET_RAW in addition to NET_ADMIN.
+securityContext:
+  capabilities:
+    add: [NET_ADMIN, NET_RAW]
+
+# One pod per region; label your nodes topology.kubernetes.io/region.
+nodeSelector:
+  topology.kubernetes.io/region: us
+
+# Tolerate the taint if your edge nodes are fenced (e.g. dataplane=true:NoSchedule).
+tolerations:
+  - key: dataplane
+    operator: Exists
+    effect: NoSchedule

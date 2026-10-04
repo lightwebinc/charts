@@ -1,0 +1,5 @@
+# Host-network fallback with ASM sourcing (no bindSource needed).
+networking:
+  mode: host
+config:
+  sourceMode: asm

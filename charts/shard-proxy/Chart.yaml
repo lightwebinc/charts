@@ -1,0 +1,56 @@
+apiVersion: v2
+name: shard-proxy
+description: IPv6 multicast frame proxy for the Bitcoin transaction distribution network
+type: application
+version: 0.7.7
+# appVersion MUST equal a tag published on ghcr.io/lightwebinc/shard-proxy
+# (the chart's tag:"" default pulls this). Images are published manually via the
+# binary repo's image-publish.yml workflow; bump appVersion ONLY in lockstep with
+# an image publish — binary git tags are NOT image tags until published.
+appVersion: "1.39.0"
+kubeVersion: ">= 1.27.0-0"
+keywords:
+  - bitcoin
+  - bsv
+  - multicast
+  - brc-124
+  - brc-128
+home: https://github.com/lightwebinc/shard-proxy
+sources:
+  - https://github.com/lightwebinc/shard-proxy
+  - https://github.com/lightwebinc/shard-proxy-helm
+maintainers:
+  - name: lightwebinc
+    url: https://github.com/lightwebinc
+icon: https://raw.githubusercontent.com/lightwebinc/bsv-multicast/main/.assets/icon.svg
+annotations:
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/changes: |
+    - kind: added
+      description: Initial chart scaffold
+    - kind: added
+      description: config.autoShardConfig keys (BRC-139 manifest consumer)
+    - kind: added
+      description: Collapsed-node keys (config.stampSource, config.egressMulticastLoop, config.egressHoplimit) + collapsed-node example
+    - kind: changed
+      description: values.schema.json documents the sourceMode=ssm bindSource requirement (the binary fails fast at startup; not schema-enforced)
+    - kind: changed
+      description: Renamed orchestrated-edge example to collapsed-node; genericized example presets and doc pointers
+    - kind: changed
+      description: values.schema.json caps config.shardBits at 12 (BRC-129 shard zoning)
+    - kind: changed
+      description: appVersion 1.14.0 (shard-bits validator 1-12; shard-common v0.14.3)
+    - kind: added
+      description: config.requireBlockPow / config.minPowBits (REQUIRE_BLOCK_POW / MIN_POW_BITS block-PoW gate; default ON, matching the binary)
+    - kind: fixed
+      description: BEEF_SHARD_BITS no longer widens an explicit 0 to 4 (Go-template default treats 0 as empty)
+    - kind: fixed
+      description: BEEF_MAX_OBJECT_BYTES / TXID_DEDUP_LOCAL_CAP render as integers, not scientific notation (values-file overrides were silently discarded)
+    - kind: fixed
+      description: networkPolicy push-ingress rule now fails the render when a push port is set and pushIngressFrom is empty — an empty `from` matches ALL sources, so the old render was world-open, not fail-closed
+    - kind: changed
+      description: appVersion 1.30.0 — first image published since 1.14.0; the default image now honours the push-frame ingest ports (>= v1.15.0), the BEEF_* envs (>= v1.20.0), block-PoW default-on (>= v1.25.0), and fragmentation-on-by-default (frag-mtu 1500)
+    - kind: changed
+      description: appVersion 1.34.1 — first image published since 1.30.1; the default image adds the payload-hash and stamped-ingress gates, the per-connection admit hook on the TCP and object lanes, and the batched-egress whole-batch drain fix. Built with Go 1.27.1.
+    - kind: changed
+      description: appVersion 1.38.1 — first image published since 1.34.1; the default image adds BEEF ingress rate limiting (per source and per plane), a separate BEEF dedup store, topic/marker/ContentID checks on pre-framed BEEF, control-plane groups derived from the source mode, stamped control-group frames teed to the retry cache, and BEEF record reads bounded at the submitter's object bound (a record far over the bound closes the connection instead of being buffered). Built with Go 1.27.1.

@@ -1,0 +1,322 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "shard-proxy values",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "replicaCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "terminationGracePeriodSeconds": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "resources": {
+      "type": "object"
+    },
+    "podSecurityContext": {
+      "type": "object"
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pullPolicy": {
+          "type": "string",
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ]
+        },
+        "tag": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "repository",
+        "pullPolicy"
+      ]
+    },
+    "networking": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "multus",
+            "host",
+            "unicast"
+          ]
+        },
+        "multus": {
+          "type": "object",
+          "properties": {
+            "networkName": {
+              "type": "string"
+            },
+            "namespace": {
+              "type": "string"
+            },
+            "fabricIPv6": {
+              "type": "string"
+            },
+            "interface": {
+              "type": "string"
+            }
+          }
+        },
+        "host": {
+          "type": "object",
+          "properties": {
+            "dnsPolicy": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": [
+        "mode"
+      ]
+    },
+    "config": {
+      "type": "object",
+      "properties": {
+        "udpListenPort": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "tcpListenPort": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "subtreeListenPort": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "blockListenPort": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "beefListenPort": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "beefShardBits": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 12,
+          "description": "BRC-148 plane width (band 0x1000 + 2^bits groups); 0 = single-group plane. MUST match the ingress proxies."
+        },
+        "beefMaxObjectBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 80740352,
+          "description": "D9 per-object byte bound (BRC-149 ingress MUST). Default 1 MiB. MUST match across proxy/listener/retry. Max is the ~77 MiB structural ceiling (uint16 FragTotal at the 1280-byte floor)."
+        },
+        "requireBlockPow": {
+          "type": "boolean",
+          "description": "REQUIRE_BLOCK_POW — gate BRC-131 block announces on header proof-of-work before egress. Default true (matches the binary); rendered unconditionally so false really disables the gate."
+        },
+        "minPowBits": {
+          "type": "string",
+          "pattern": "^(0[xX][0-9a-fA-F]{1,8}|[0-9]{1,10})$",
+          "description": "MIN_POW_BITS — PoW difficulty floor for requireBlockPow in Bitcoin compact nBits. \"0\" = header self-consistency only (default). mainnet/testnet 0x1d00ffff, devnet 0x207fffff. Hex MUST carry the 0x prefix — a bare \"1d00ffff\" is parsed as decimal and fails at startup."
+        },
+        "multicastIf": {
+          "type": "string"
+        },
+        "egressMulticastLoop": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "egressHoplimit": {
+          "type": "integer"
+        },
+        "egressPort": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "shardBits": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "mcScope": {
+          "type": "string",
+          "enum": [
+            "link",
+            "site",
+            "org",
+            "global"
+          ]
+        },
+        "mcGroupId": {
+          "type": "string"
+        },
+        "sourceMode": {
+          "type": "string",
+          "enum": [
+            "asm",
+            "ssm"
+          ]
+        },
+        "bindSource": {
+          "type": "string"
+        },
+        "stampSource": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "numWorkers": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fragMtu": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "coalesce": {
+          "type": "boolean"
+        },
+        "coalesceMaxBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "coalesceMaxMembers": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "coalesceCarryTxid": {
+          "type": "boolean"
+        },
+        "debug": {
+          "type": "boolean"
+        },
+        "logFormat": {
+          "type": "string",
+          "enum": [
+            "text",
+            "json"
+          ]
+        },
+        "logLevel": {
+          "type": "string",
+          "enum": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ]
+        },
+        "traceSampling": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "txidDedup": {
+          "type": "object",
+          "properties": {
+            "localCap": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "backend": {
+              "type": "string",
+              "enum": [
+                "",
+                "memory",
+                "redis",
+                "aerospike",
+                "none"
+              ]
+            },
+            "redisAddr": {
+              "type": "string"
+            },
+            "prefix": {
+              "type": "string"
+            },
+            "ttl": {
+              "type": "string"
+            },
+            "aerospikeHosts": {
+              "type": "string"
+            },
+            "aerospikeNamespace": {
+              "type": "string"
+            },
+            "aerospikeSet": {
+              "type": "string"
+            }
+          }
+        },
+        "autoShardConfig": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "bootstrap": {
+              "type": "string",
+              "enum": [
+                "optional",
+                "required"
+              ]
+            },
+            "pilotQuorum": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "pilotHysteresis": {
+              "type": "string"
+            },
+            "beaconScope": {
+              "type": "string",
+              "enum": [
+                "",
+                "link",
+                "site",
+                "org",
+                "global"
+              ]
+            },
+            "beaconPort": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            },
+            "liveResharding": {
+              "type": "boolean"
+            },
+            "bridgingWindow": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "$comment": "sourceMode=ssm requires a per-replica bindSource \u2014 the binary refuses SSM without one and fails fast at startup. Not schema-enforced: the chart's own defaults ship ssm with bindSource empty (set per replica at install)."
+        }
+      ]
+    }
+  }
+}

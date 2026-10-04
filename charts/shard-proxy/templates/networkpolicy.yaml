@@ -1,0 +1,42 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "shard-proxy.fullname" . }}
+  labels:
+    {{- include "shard-proxy.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "shard-proxy.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: metrics
+          protocol: TCP
+      {{- with .Values.networkPolicy.ingressFrom }}
+      from:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- if or (gt (int (.Values.config.subtreeListenPort | default 0)) 0) (gt (int (.Values.config.blockListenPort | default 0)) 0) }}
+    # Privileged push ingress (BRC-143 subtree / BRC-144 block): admit only the
+    # configured peers. An empty-or-missing `from` matches ALL sources per the
+    # NetworkPolicy spec, so an empty pushIngressFrom would leave the privileged
+    # path silently world-open — refuse to render instead (fail-closed).
+    {{- if not .Values.networkPolicy.pushIngressFrom }}
+    {{- fail "networkPolicy.pushIngressFrom must list the permitted peers when config.subtreeListenPort or config.blockListenPort is set (an empty `from` admits ALL sources)" }}
+    {{- end }}
+    - ports:
+        {{- if gt (int (.Values.config.subtreeListenPort | default 0)) 0 }}
+        - port: subtree-push
+          protocol: TCP
+        {{- end }}
+        {{- if gt (int (.Values.config.blockListenPort | default 0)) 0 }}
+        - port: block-push
+          protocol: TCP
+        {{- end }}
+      from:
+        {{- toYaml .Values.networkPolicy.pushIngressFrom | nindent 8 }}
+    {{- end }}
+{{- end }}
