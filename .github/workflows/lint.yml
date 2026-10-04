@@ -1,58 +1,21 @@
 name: lint
 
 on:
+  # main only: a branch with a PR is covered by the pull_request run.
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
 
 concurrency:
-  group: lint-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
+  # Render scenarios: ci/*.yaml (+ .expect assertions), examples/*.yaml, and
+  # ci/reject/*.yaml for renders that must fail. See lightwebinc/ci helm-lint.
   lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
+    uses: lightwebinc/ci/.github/workflows/helm-lint.yml@e6098fcd1c4ecf7c0163e8599b4b3fb957562295 # main
 
-      - uses: azure/setup-helm@v4
-        with:
-          version: v3.16.0
-
-      - name: helm lint (defaults)
-        run: helm lint .
-
-      - name: helm lint (strict)
-        run: helm lint . --strict
-
-      - name: helm template (Deployment, subtx-gen)
-        run: |
-          helm template t . \
-            --set mode=subtx-gen --set workloadType=Deployment \
-            --debug > /tmp/render-dep.yaml
-          test -s /tmp/render-dep.yaml
-          grep -q "kind: Deployment" /tmp/render-dep.yaml
-          grep -q -- "-subtx-gen" /tmp/render-dep.yaml || true
-
-      - name: helm template (Job, send-anchor-frame)
-        run: |
-          helm template t . \
-            --set mode=send-anchor-frame --set workloadType=Job \
-            --debug > /tmp/render-anchor.yaml
-          grep -q "kind: Job" /tmp/render-anchor.yaml
-
-      - name: helm template (Job, send-block-announce)
-        run: |
-          helm template t . \
-            --set mode=send-block-announce --set workloadType=Job \
-            --debug > /tmp/render-block.yaml
-          grep -q "kind: Job" /tmp/render-block.yaml
-
-      - name: helm template (Job, send-subtree-data)
-        run: |
-          helm template t . \
-            --set mode=send-subtree-data --set workloadType=Job \
-            --debug > /tmp/render-subtree.yaml
-          grep -q "kind: Job" /tmp/render-subtree.yaml
