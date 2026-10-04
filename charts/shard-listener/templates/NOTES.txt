@@ -18,4 +18,4 @@ discovery (BRC-126). Set retryEndpoints explicitly for deterministic startup.
 
 Metrics: http://{{ include "shard-listener.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.metricsPort }}{{ .Values.metrics.path }}
 
-See https://github.com/lightwebinc/shard-listener-helm for the full values reference.
+See https://github.com/lightwebinc/charts/tree/main/charts/shard-listener for the full values reference.

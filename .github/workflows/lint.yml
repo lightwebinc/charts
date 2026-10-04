@@ -1,0 +1,54 @@
+name: lint
+
+on:
+  # main only: a branch with a PR is covered by the pull_request run.
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Lint only the charts a change touches; a change outside charts/ (this
+  # workflow, the matrix script) and any manual run lint every chart. Each
+  # chart's own inputs live in charts/<name>/ci/lint-inputs.json.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+      any: ${{ steps.m.outputs.any }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - id: m
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.sha }}
+        run: |
+          if [ "$EVENT" = workflow_dispatch ] || [ -z "$BASE" ] || [ "$BASE" = 0000000000000000000000000000000000000000 ]; then
+            scripts/chart-matrix.py
+          else
+            # shellcheck disable=SC2046 # one argument per changed path
+            scripts/chart-matrix.py $(git diff --name-only "$BASE" "$HEAD")
+          fi
+
+  lint:
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.changes.outputs.matrix) }}
+    uses: lightwebinc/ci/.github/workflows/helm-lint.yml@192a5b5169fd635e191104c14631525bbcd5ec60 # v0.3.0
+    with:
+      chart-path: charts/${{ matrix.chart }}
+      set: ${{ matrix.set }}
+      examples-set: ${{ matrix.examples-set }}
+      render-defaults: ${{ matrix.render-defaults }}

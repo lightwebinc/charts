@@ -14,4 +14,4 @@ NOTE: workloadType=Job with subtxGen.duration=0 will run until count is reached
 or until SIGINT. Set subtxGen.duration to a finite value for Job semantics.
 {{- end }}
 
-See https://github.com/lightwebinc/subtx-generator-helm for the full values reference.
+See https://github.com/lightwebinc/charts/tree/main/charts/subtx-generator for the full values reference.

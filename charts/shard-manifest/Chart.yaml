@@ -18,7 +18,7 @@ keywords:
 home: https://github.com/lightwebinc/shard-manifest
 sources:
   - https://github.com/lightwebinc/shard-manifest
-  - https://github.com/lightwebinc/shard-manifest-helm
+  - https://github.com/lightwebinc/charts/tree/main/charts/shard-manifest
 maintainers:
   - name: lightwebinc
     url: https://github.com/lightwebinc

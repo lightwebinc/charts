@@ -19,4 +19,4 @@ Prereq: kube-prometheus-stack or equivalent CRDs must be installed in the cluste
 {{- end }}
 
 See the chart README for the full values reference:
-  https://github.com/lightwebinc/shard-proxy-helm
+  https://github.com/lightwebinc/charts/tree/main/charts/shard-proxy

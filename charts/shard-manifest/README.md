@@ -1,4 +1,4 @@
-# shard-manifest-helm
+# shard-manifest Helm chart
 
 > Part of the [**BSV Layered Multicast**](https://github.com/lightwebinc/bsv-multicast) open-source project — see the main repository for the full architecture, design docs, and BRC specifications.
 

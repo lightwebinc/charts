@@ -1,5 +1,0 @@
-owner: lightwebinc
-git-repo: shard-listener-helm
-package-path: .cr-release-packages
-skip-existing: true
-sign: false

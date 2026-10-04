@@ -30,4 +30,4 @@ Beacon (BRC-126):
   Interval: {{ .Values.config.beaconInterval }}
   Scope: {{ .Values.config.beaconScope }}
 
-See https://github.com/lightwebinc/retry-endpoint-helm for the full values reference.
+See https://github.com/lightwebinc/charts/tree/main/charts/retry-endpoint for the full values reference.

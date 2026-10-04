@@ -1,0 +1,37 @@
+name: release
+
+# Manual, gated release of ONE chart to oci://ghcr.io/lightwebinc/charts.
+# The registry is the release record: no git tag is created. Bump the chart's
+# Chart.yaml version (and appVersion, which must name a published image) first.
+on:
+  workflow_dispatch:
+    inputs:
+      chart:
+        description: Chart to release
+        type: choice
+        options:
+          - arcade-bridge
+          - retry-endpoint
+          - shard-listener
+          - shard-manifest
+          - shard-proxy
+          - subtx-generator
+          - teranode-bridge
+      confirm:
+        description: 'Type RELEASE to publish the chart'
+        required: true
+      dry-run:
+        description: 'Package only, push nothing'
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    if: inputs.confirm == 'RELEASE'
+    permissions:
+      contents: read
+      packages: write
+    uses: lightwebinc/ci/.github/workflows/helm-release.yml@192a5b5169fd635e191104c14631525bbcd5ec60 # v0.3.0
+    with:
+      chart-path: charts/${{ inputs.chart }}
+      dry-run: ${{ inputs.dry-run }}
