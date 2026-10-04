@@ -31,7 +31,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: lightwebinc/ci/.github/workflows/helm-release.yml@3c61864e6d822d16119858e525129ea5c400d4d7 # main
+    uses: lightwebinc/ci/.github/workflows/helm-release.yml@3c61864e6d822d16119858e525129ea5c400d4d7 # v0.4.0
     with:
       chart-path: charts/${{ inputs.chart }}
       dry-run: ${{ inputs.dry-run }}
