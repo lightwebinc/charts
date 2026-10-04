@@ -1,0 +1,7 @@
+# The tunnel needs the pod network, not host networking.
+tunnel:
+  enabled: true
+  configSecret:
+    name: bridge-wg
+networking:
+  mode: host

@@ -1,0 +1,4 @@
+# An empty peerId with announcements configured is unsafe.
+config:
+  kafka:
+    - 192.0.2.10:19092

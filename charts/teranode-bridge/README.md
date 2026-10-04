@@ -1,0 +1,218 @@
+# teranode-bridge Helm chart
+
+> Part of the [**BSV Layered Multicast**](https://github.com/lightwebinc/bsv-multicast) open-source project — see the main repository for the full architecture, design docs, and BRC specifications.
+
+Helm chart for [teranode-bridge](https://github.com/lightwebinc/teranode-bridge) — the landing-tier bridge for pushed delivery into an **unmodified** Teranode cluster.
+
+This repository packages templates, default values, JSON Schema validation, and CI workflows for the bridge. The application source lives in [`teranode-bridge`](https://github.com/lightwebinc/teranode-bridge).
+
+The binary is configured by **CLI flags only** — no environment fallback, no config file — so the Deployment renders `args:` from `.config` in [`values.yaml`](values.yaml). Empty / `0` / `"0s"` / `false` values are omitted so the binary default applies; anything unmodelled goes in `extraArgs`.
+
+## What it deploys
+
+| Plane | Port (default) | Who dials it |
+|---|---|---|
+| tx lane (BRC-30 EF) | `8725` | the delivery side |
+| subtree lane (BRC-143) | `9143` | the delivery side |
+| block lane (BRC-144) | `9144` | the delivery side |
+| retrieval plane | `9145` | **the Teranode cluster**, pulling what was announced |
+| metrics / health | `9146` | Prometheus, kubelet |
+| reverse path (out) | `8726` / `8727` | this bridge → the edge proxy's fabric-side object ingress |
+
+The tx lane carries **BRC-30 extended format only**. A BRC-12 standard
+transaction parses perfectly well, so the lane checks the EF marker itself and
+refuses it on arrival — counted in `teranode_bridge_lane_objects_rejected_total{lane="tx"}`,
+connection kept. Deferring that to the cluster's 4xx would be worse than late:
+both serializations share one txid, so the refused copy would first claim the
+dedupe entry and suppress the EF copy behind it.
+
+Two Services, because the two directions have different callers: `<release>-teranode-bridge` carries the delivery lanes plus metrics, and `<release>-teranode-bridge-retrieval` is the cluster-facing pull address (not rendered in `sink` mode, which serves no pulls). Service and container ports are **derived from the `config.*Listen` flags**, so a port can never drift from what the process actually binds.
+
+No ConfigMap: there is nothing to mount — the flags are the entire configuration surface.
+
+## Install
+
+> The chart references `ghcr.io/lightwebinc/teranode-bridge:<appVersion>` — `appVersion` always tracks a published image tag (see the contract note in [`Chart.yaml`](Chart.yaml)). The image is public.
+
+```bash
+# OCI registry — minimum viable delivery-only bridge
+helm install bridge oci://ghcr.io/lightwebinc/charts/teranode-bridge \
+  --version 0.7.0 -n bsv-mcast --create-namespace \
+  --set config.advertise=http://[2001:db8:3f::1]:9145 \
+  --set config.propagation[0]=http://192.0.2.10:20833 \
+  --set config.kafka[0]=192.0.2.10:19092 \
+  --set config.peerId=12D3KooW…   # synthetic id, registered with no p2p service
+
+# Or from a local clone — landing tier in front of a cluster, both directions
+helm install bridge . -n bsv-mcast -f examples/landing-tier.yaml \
+  --set config.advertise=http://[2001:db8:3f::1]:9145
+
+# Sink — burn in a delivery slot with no cluster at all
+helm install burn-in . -n bsv-mcast -f examples/sink.yaml
+```
+
+`helm install` prints the exact URL that will be announced, the state of the reverse path, and a warning for every required flag left empty. Read it.
+
+## `config.advertise` — the one value that fails silently
+
+`-advertise` is the base URL **the cluster** dials to pull an announced subtree or block. Everything else in the ingest path can be verified by watching a counter; this one cannot, because a wrong value breaks nothing that reports an error:
+
+> announcements keep succeeding · pulls never arrive · `retrieval stats` stays flat while `announce stats` climbs · no log line, no failed metric
+
+Rules:
+
+| Rule | Why |
+|---|---|
+| It is what the **cluster** can dial | Not necessarily what the bridge binds. Binding `[::]:9145` and advertising a routable address is the normal shape. |
+| **No API prefix** | The announced URL is `advertise` + `config.apiPrefix`. Putting `/api/v1` in both doubles the path and every subtree/block pull 404s — the chart **refuses to install** that. |
+| No trailing slash | Trimmed anyway, but `//subtree/` is what a raw concatenation would produce. |
+| Scheme required (`http://`, `https://`) | Schema-enforced: a bare `host:port` is not a URL the cluster can dial. |
+| Reachable **from the cluster's LAN** | The cluster is usually not in this k8s cluster. A pod-DNS name only works if it resolves there; otherwise use `networking.mode: host` and a node address, or a LoadBalancer address on `service.retrieval`. |
+
+`config.localAsset` is the mirror image and the easy thing to get backwards: it **does** carry the cluster's own `/api/v1`, because the bridge dials it exactly as given.
+
+## Modes
+
+| `config.mode` | What runs | Required |
+|---|---|---|
+| `all` (default) | lanes + propagation submit + Kafka announce + retrieval plane (+ reverse path if `config.blockchain` is set) | `advertise`, `propagation`, `kafka` |
+| `sink` | lanes only: receive, parse, verify, count | **nothing** |
+
+`sink` is a first-class deployment, not a degraded one: the lanes still run and still enforce framing, so it burns in a delivery slot before a cluster exists and separates object-plane faults from cluster-side ones. The chart drops the cluster-facing flags and the retrieval Service entirely in that mode — a sink that listed an `-advertise` would read like a bridge that lost its cluster.
+
+## Scaling — why `replicaCount` stays 1
+
+Two properties make replicas the wrong instrument:
+
+1. **The object cache is in-process, and each bridge announces itself.** A pushed subtree lives only on the bridge that received it. Put N replicas behind one Service and `(N-1)/N` of the cluster's pulls land on a replica that never saw the object: `404`, and the cluster falls back to its ordinary peer announce-and-pull (slower, not lost). The chart warns on `replicaCount > 1`.
+2. **Exactly one submitter per class per cluster.** `-submitter` decides whether this bridge publishes what the cluster produced back onto the object plane. Two holders publish every local subtree and block twice. The chart **fails the install** for `replicaCount > 1` while the reverse path is enabled and `config.submitter` is true, rather than silently creating N submitters.
+
+Scale by adding **releases**, each with its own `config.advertise` — see [`examples/standby.yaml`](examples/standby.yaml). A second bridge with `config.submitter: false` still connects and still runs its origin filter (`remote_skipped` keeps counting) but publishes nothing: a hot spare whose promotion is a flag flip and a restart.
+
+For the same reason the chart ships **no HorizontalPodAutoscaler**. Autoscaling this workload would fragment the cache under load — the moment it is least able to absorb a miss — and, with the reverse path on, would be scaling the one thing that must stay singular.
+
+## Pod-attached tunnel
+
+`tunnel.enabled: true` terminates the consumer end of the delivery tunnel **inside the bridge pod**. A WireGuard sidecar shares the pod's network namespace with the bridge, dials **out** to the delivery edge, and holds the session with keepalives; the edge dials the three lanes back through it, onto the bridge's wildcard listeners. An in-cluster Teranode then needs no landing server, router, BGP session, LoadBalancer, NodePort or inbound firewall rule, and its retrieval pulls never leave the cluster. See [`examples/pod-attached.yaml`](examples/pod-attached.yaml).
+
+```bash
+kubectl create namespace bridge
+kubectl label namespace bridge pod-security.kubernetes.io/enforce=privileged
+kubectl -n bridge create secret generic bridge-shard0-wg --from-file=wg0.conf=./wg0.conf
+helm -n bridge install bridge-shard0 oci://ghcr.io/lightwebinc/charts/teranode-bridge \
+  -f examples/pod-attached.yaml --set config.peerId=12D3KooW…
+kubectl -n bridge exec deploy/bridge-shard0-teranode-bridge -c wireguard -- wg show wg0
+```
+
+**Maturity.** This shape is new in chart 0.8.0. It has been exercised against a stand-in WireGuard peer under exactly the security context the chart renders (handshake, lanes dialled back into an unprivileged container in the shared namespace, clean restart and shutdown), but not yet on a production cluster or through a pod reschedule against a live delivery slot. Drill a reschedule before you rely on it. The landing-tier shapes above are the proven ones.
+
+What to know before enabling it:
+
+- **The Secret is the provisioned file, unchanged, with your private key pasted in.** The chart never takes key material through values. The sidecar refuses the unedited placeholder key, and refuses a default route in `AllowedIPs` (in a pod that would send the bridge's own Kafka and propagation traffic into the tunnel). A `DNS =` line is dropped, because the pod keeps the cluster's resolver. `tunnel.mtu` (1420) is written only when the file sets none.
+- **One release per tunnel.** A WireGuard key is one session, so two pods holding it take the tunnel from each other on every keepalive. The chart refuses `replicaCount > 1`, and rolls out with `Recreate` so a surged pod never competes with the one still serving. `k` shards are `k` releases.
+- **The sidecar is the only privileged container.** It runs as root with `NET_ADMIN` and every other capability dropped, on a read-only root filesystem; the bridge stays nonroot with `drop: ["ALL"]`. Pod Security Standards `baseline` and `restricted` both forbid `NET_ADMIN` (`restricted` allows adding only `NET_BIND_SERVICE`; `baseline` allows a fixed list that excludes it), so the namespace needs `enforce: privileged`. If policy forbids that, terminate WireGuard on the node or keep a landing box, and leave `tunnel.enabled` false.
+- **The node needs the `wireguard` kernel module** (mainline since 5.6). `tunnel.userspace: true` mounts `/dev/net/tun` so `wg-quick` can fall back to `wireguard-go` where there is none; that needs an image that ships `wireguard-go`, which the default image does not.
+- **The pod's network namespace needs IPv6 enabled**, because the tunnel's inner addresses are IPv6. That is the kernel default, including on IPv4-only clusters; it fails only where nodes set `net.ipv6.conf.default.disable_ipv6=1`.
+- **Native sidecar by default** (`tunnel.nativeSidecar`, Kubernetes 1.29 or later): the tunnel starts before the bridge and stops after it, so a terminating bridge drains its lanes over a live tunnel. Set it false on older clusters; the sidecar then holds the tunnel up for `tunnel.shutdownDelaySeconds` after SIGTERM.
+- **Liveness restarts the sidecar, never the bridge**, when no peer has handshaken for `tunnel.livenessProbe.maxHandshakeAgeSeconds`. The restart also re-resolves the edge's hostname, which a running WireGuard interface never does.
+- **`networkPolicy.laneIngressFrom` is inert**: lane traffic arrives on the WireGuard interface inside the pod, not through the CNI. The retrieval and metrics rules still apply.
+
+## Install-time refusals
+
+The chart fails rather than render a manifest that produces a crashloop or a silent data fault:
+
+| Condition | Why not a warning |
+|---|---|
+| `config.advertise` ends with `config.apiPrefix` | Doubled announce path. Nothing errors at runtime; subtree and block ingest simply stops. |
+| `config.peerId` empty while announcements are configured | Catchup substitutes the announce URL for the missing id, targets the bridge for the header chain, `404`s, and circuit-breaks the cluster out of recovery. |
+| `config.peerId` not `12D3KooW` + 44 base58 chars | An undecodable id is diverted for the wrong reason and fills the cluster's logs with decode errors. |
+| `config.blockchain` set without `config.localAsset` **and** `config.edgeIngress` | The binary exits `2` before any listener opens — a crashloop, not a bridge. |
+| `replicaCount > 1` with reverse path + `config.submitter: true` | Duplicate upward publication of every locally produced object. |
+| `tunnel.enabled` with `networking.mode: host` | The sidecar would create the interface on the node itself, as root. Terminate a node-level tunnel on the node. |
+| `tunnel.enabled` with `replicaCount > 1` | One WireGuard key is one session: the pods steal the tunnel from each other and each sees a fraction of every lane. |
+| `tunnel.enabled` with an empty `tunnel.configSecret.name` | The configuration holds a private key and is only ever read from a Secret. |
+| `tunnel.nativeSidecar` on Kubernetes older than 1.29 | The sidecar would render as a blocking init container and the bridge would never start. |
+
+Softer problems (empty `advertise`/`propagation`/`kafka`, an empty `mineTag` with the reverse path on, `replicaCount > 1`) surface as NOTES warnings and a `helm.sh/chart-warnings` pod annotation.
+
+## Values reference
+
+See [`values.yaml`](values.yaml) for the full annotated reference — every flag in [`teranode-bridge/docs/configuration.md`](https://github.com/lightwebinc/teranode-bridge/blob/main/docs/configuration.md) is reachable from `.config`, except the standby-promotion trio (`-submitter-probe`, `-submitter-grace`, `-submitter-when-blind`), which go through `extraArgs`.
+
+### Flags whose zero value means something
+
+Omission means "use the binary default", so a flag whose default is non-zero can never be turned *off* by omitting it. Four are therefore rendered **unconditionally**:
+
+| Key | Renders | Because |
+|---|---|---|
+| `config.submitter` | `-submitter=<v>` | Binary default `true`; a bare flag can only turn a role on, so `false` would be a silent no-op. |
+| `config.txRetries` | `-tx-retries=<v>` | `0` means *no retries*; omitted it becomes the binary's `3`. |
+| `config.statsEvery` | `-stats-every=<v>` | `"0s"` means *no periodic stats*; omitted it becomes the binary's `1m`. |
+| `metrics.enabled: false` | `-metrics-addr=` | The only value that switches the listener off. Setting `config.metricsAddr: ""` would be omitted and the binary default `[::]:9146` would apply — metrics you thought you had disabled. |
+
+`metrics.enabled: false` also removes `/health*`, `/healthz`, `/readyz`, `POST /loglevel`, `/debug/pprof` and both probes, which have nowhere else to point.
+
+> The chart renders flags the pinned `appVersion` image understands, and Go
+> exits(2) on an unknown flag — pointing `image.tag` at an older image than
+> `appVersion` CrashLoopBackOffs every pod. Publish the image first, then bump
+> `appVersion` (the contract in [`Chart.yaml`](Chart.yaml)).
+
+### Observability
+
+Series are `teranode_bridge_*`, on the same `Namespace`/`Subsystem` grid as every Teranode metric, and the health routes match Teranode's shape (`/health`, `/health/readiness`, `/health/liveness`, JSON dependency body, `?timeout=` override). The full catalogue and the alert expressions are in the [binary repo's metrics reference](https://github.com/lightwebinc/teranode-bridge/blob/main/docs/references/prometheusMetrics.md).
+
+| Value | Effect |
+| --- | --- |
+| `metrics.legacyPrefix: true` (default) | Also emits every pre-existing series under its old `btb_` name, so dashboards written before the rename keep working. Set `false` once migrated. |
+| `metrics.prometheusRule.enabled: true` | Installs the alert rules, including the submitter-role invariant — `sum(teranode_bridge_submitter_active)` must equal exactly **1** per cluster per class. Set `metrics.prometheusRule.clusterSelectorLabel` to whatever label identifies one cluster's bridges, or a fleet-wide sum reports every extra cluster as a double-submitter. |
+| `health.strict: true` | Fails readiness when **any** dependency is down (Teranode's `CheckAll` semantics). Off by default: the retrieval plane serves from a local cache, so a bridge with unreachable Kafka still answers pulls for what it already announced — and Kafka is shared, so gating on it would remove every bridge from the retrieval Service at once. |
+| `tracing.enabled: true` | OTLP/HTTP export. Point `tracing.collectorUrl` at the **same** collector the cluster uses. |
+| `profiling.blockProfileRate` / `mutexProfileFraction` | Non-zero makes `/debug/pprof/block` and `/mutex` return real data; at `0` they return an *empty* profile, not an error. |
+
+#### Blockchain connection
+
+`config.blockchainSecurityLevel` mirrors Teranode's **global** `security_level_grpc`. A non-zero value on the cluster wraps every gRPC listener in TLS, and a plaintext bridge then cannot connect — a failure that hides well, because delivery, announce and retrieval all keep working while only the reverse path retries forever. Levels 2–3 need `blockchainCaCert`, `blockchainCert` and `blockchainKey`; misconfiguration is refused at pod start with the flag named.
+
+`config.blockchainKeepalive` (default `30s`) is not tuning. grpc-go's client pings **never** by default, and the connection crosses a tunnel: a silently dropped path leaves `Recv` blocked forever, and the reconnect loop is only entered on a `Recv` error. It must stay at or above the cluster's `grpc_server_min_ping_time_seconds` (default 30 s) or the server replies `GOAWAY too_many_pings` and the reconnect loop turns that into a ping storm.
+
+`probes.readiness.path` stays `/readyz` and not `/health/readiness`: `/readyz` is the failover contract, polled by a standby bridge against the primary (`-submitter-probe`, via `extraArgs`). A shared-dependency blip visible to both bridges must not read as "the primary died" — two submitters is worse than a late one.
+
+### Networking
+
+| `networking.mode` | Use |
+|---|---|
+| `pod` (default) | Ordinary CNI. Right when the Teranode cluster and the delivery side can both route to cluster Services. |
+| `host` | `hostNetwork: true` — the pod binds node addresses. Right when the cluster can only reach a node address, which is the common case for a landing tier in front of a LAN cluster. Lane ports become **host** ports: one bridge per node, and the rollout defaults to `Recreate` (a rolling update cannot bind the same host ports twice). |
+
+`tunnel.enabled` adds a third shape on top of `pod`: the delivery tunnel terminates in a sidecar inside the pod, so nothing outside the cluster has to reach it at all. See [Pod-attached tunnel](#pod-attached-tunnel).
+
+`networkPolicy` splits ingress by audience — `laneIngressFrom` (delivery side), `retrievalIngressFrom` (the cluster), `metricsIngressFrom` (Prometheus) — and is fail-closed: enabling it with an empty list for a port admits no peers on it. It is inert under `networking.mode: host`; restrict host traffic at the node firewall.
+
+### Sizing
+
+`resources` defaults assume the 1 GiB `config.cacheBytes` default. That value is **per cache and there are two** (objects and transactions), so the process ceiling is twice it — raise the memory request/limit and `cacheBytes` together, or the pod is OOM-killed inside the validation window it exists to cover.
+
+Size `config.cacheTtl` against **validation lag** (seconds), not retention. An entry evicted before the cluster pulls it is a `404` and a fallback to the peer path: degraded latency, not lost data. Watch `cache evicted` and `retrieval miss` together — rising miss against flat evicted points at a topic name or `-advertise` problem instead.
+
+### Reverse path
+
+Set `config.blockchain` to enable it; `config.localAsset` and `config.edgeIngress` become mandatory. Two things to get right:
+
+- **`config.mineTag`** — this cluster's `coinbase_arbitrary_text`. Blockchain notifications carry no origin, so a block learned over libp2p *before* the fabric delivered it looks locally produced; without the tag the bridge republishes a remote block upward with false attribution. The check is derived from block content, so it survives the restart that wipes the seen-registry. Needs no Teranode change.
+- **The gRPC connection to the blockchain service is plaintext and unauthenticated at the default `config.blockchainSecurityLevel: 0`.** Keep it on a trusted LAN, or match the cluster's `security_level_grpc` (see [Blockchain connection](#blockchain-connection)).
+
+## Helm test
+
+```bash
+helm test bridge -n bsv-mcast
+```
+
+Probes `/healthz`, `/metrics`, `/readyz` and the Teranode-shaped health routes on the metrics Service. `/readyz` answers `200` only once **every** lane is bound — the one check that distinguishes a live bridge from a running process. `/health/readiness` is probed for reachability only, since an advisory dependency being down is a legitimate `503` there.
+
+## Release
+
+The `release.yml` workflow is gated. It runs only via `workflow_dispatch` with `confirm: RELEASE`. Tag-based auto-release is intentionally disabled, and the chart is OCI-only: no git tag is created.
+
+## License
+
+Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).

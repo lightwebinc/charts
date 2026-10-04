@@ -1,0 +1,4 @@
+tunnel:
+  enabled: true
+  configSecret:
+    name: bridge-wg

@@ -1,0 +1,6 @@
+# The tunnel is single-replica.
+tunnel:
+  enabled: true
+  configSecret:
+    name: bridge-wg
+replicaCount: 2

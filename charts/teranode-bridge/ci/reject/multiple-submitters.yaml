@@ -1,0 +1,6 @@
+# Only one replica may submit on the reverse path.
+replicaCount: 3
+config:
+  blockchain: 192.0.2.10:20087
+  localAsset: http://192.0.2.10:20090/api/v1
+  edgeIngress: 2001:db8:1::1

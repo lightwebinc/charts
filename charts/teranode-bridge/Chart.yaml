@@ -1,0 +1,70 @@
+apiVersion: v2
+name: teranode-bridge
+description: Landing-tier bridge for pushed delivery into an unmodified Teranode cluster — terminates the tx/subtree/block delivery lanes, announces and serves the cluster's pulls, and publishes cluster-produced subtrees and blocks back onto the object plane
+type: application
+version: 0.8.0
+# appVersion MUST equal a tag published on ghcr.io/lightwebinc/teranode-bridge
+# (the chart's tag:"" default pulls this). Images are published manually via the
+# binary repo's image-publish.yml workflow; bump appVersion ONLY in lockstep with
+# an image publish — binary git tags are NOT image tags until published.
+appVersion: "0.9.0"
+kubeVersion: ">= 1.27.0-0"
+keywords:
+  - bitcoin
+  - bsv
+  - multicast
+  - teranode
+  - brc-30
+  - brc-143
+  - brc-144
+home: https://github.com/lightwebinc/teranode-bridge
+sources:
+  - https://github.com/lightwebinc/teranode-bridge
+  - https://github.com/lightwebinc/teranode-bridge-helm
+maintainers:
+  - name: lightwebinc
+    url: https://github.com/lightwebinc
+icon: https://raw.githubusercontent.com/lightwebinc/bsv-multicast/main/.assets/icon.svg
+annotations:
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/changes: |
+    - kind: added
+      description: tunnel.* — pod-attached landing. An opt-in WireGuard sidecar terminates the delivery tunnel inside the bridge pod (outbound dial, shared network namespace), reading the provisioned wg-quick file from a Secret; refuses host networking, replicaCount > 1, a placeholder private key and a default route in AllowedIPs; native sidecar on Kubernetes 1.29+; handshake-age liveness; examples/pod-attached.yaml
+    - kind: changed
+      description: appVersion 0.9.0 — default reverse-path submit ports are 8726/8727, the edge proxy's fabric-side object ingress; 9143/9144 are the consumer-side delivery lanes this bridge listens on, and nothing in the fabric listens on them
+    - kind: changed
+      description: wording — the component is described as a landing-tier bridge throughout; no template or value changes
+    - kind: changed
+      description: appVersion 0.8.0 — the seam packages (lanes, cache, retrieval, reverse, announce, registry, hashid, encode, tnwire) are public Go packages and documented extension points; no flag or wire changes
+    - kind: changed
+      description: default reverse-path submit ports are 9143/9144 (were 8726/8727) — a landing site now sends each object class upward on the same canonical port it receives it on
+    - kind: changed
+      description: appVersion 0.7.1 — the binary itself refuses an empty -peer-id at startup for announcing modes (sink mode exempt); previously only this chart's schema refused it, so non-chart deployments could still announce the catchup-circuit-breaking empty id
+    - kind: changed
+      description: appVersion 0.7.0 — default tx lane port is 8725 (was 8833); 8725 names transactional data on the multicast side, while 8833 stays a Teranode-side port
+    - kind: added
+      description: appVersion 0.6.2 — config.blockchainSecurityLevel 0-3 mirrors Teranode's global security_level_grpc; a plaintext dial cannot reach a TLS cluster at all, and only the reverse path fails
+    - kind: added
+      description: config.blockchainKeepalive — grpc-go pings never by default, so a silently dropped path left the notification stream wedged until restart
+    - kind: fixed
+      description: appVersion 0.6.1 — an unserved route no longer stamps the last-pull freshness gauge; partial propagation reach is no longer counted as a failure under health.strict
+    - kind: changed
+      description: appVersion 0.6.0 — metrics renamed to teranode_bridge_* on Teranode's Namespace/Subsystem grid; metrics.legacyPrefix (default true) dual-emits the old btb_ names for one release
+    - kind: added
+      description: Teranode-shaped health routes /health, /health/readiness and /health/liveness with a JSON dependency body; health.strict restores upstream all-or-nothing CheckAll semantics
+    - kind: added
+      description: metrics.prometheusRule installs alert rules including the submitter-role invariant, freshness staleness and announce backlog
+    - kind: added
+      description: tracing.* enables OTLP/HTTP export with upstream's sampling defaults; profiling.* enables the block and mutex profilers
+    - kind: added
+      description: config.clusterPoll reads the cluster's FSM state and tip height over the existing blockchain connection
+    - kind: added
+      description: probes.readiness.path and probes.liveness.path are configurable; readiness stays on /readyz, which is the failover contract
+    - kind: changed
+      description: appVersion 0.5.0 — the tx lane refuses a BRC-12 standard transaction instead of forwarding it for the cluster to refuse
+    - kind: added
+      description: metric teranode_bridge_lane_objects_rejected_total{lane} counts objects refused on lane format policy, separately from handler errors
+    - kind: changed
+      description: appVersion 0.4.0 — chain-sync canary metric teranode_bridge_retrieval_unserved_route_total, retry of a failed submit as one batch bounded by the inflight semaphore
+    - kind: added
+      description: config.peerId is required whenever announcements are configured and must be a valid-format synthetic libp2p id — empty is refused at install time

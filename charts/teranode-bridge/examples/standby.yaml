@@ -1,0 +1,48 @@
+# Standby bridge in front of a cluster that already has a submitter.
+#
+#   helm install bridge-b . -f examples/standby.yaml \
+#     --set config.advertise=http://[2001:db8:3f::2]:9145 \
+#     --set config.peerId=12D3KooW…
+#
+# Identical to the landing tier except it never publishes upward: the subscriber
+# still connects and still runs its origin filter (so remote_skipped keeps
+# counting), but it fetches no assets and submits nothing. Promotion is a flag
+# flip and a restart — or hands-free: point -submitter-probe (via extraArgs, no
+# .config key) at the primary's /readyz to auto-promote when the primary dies
+# and demote when it returns.
+#
+# This is the ONLY way to run a second bridge against one cluster. Two holders of
+# the submitter role publish every locally produced subtree and block twice onto
+# the object plane, so the chart refuses replicaCount > 1 while submitter is
+# true — scale by adding releases like this one, each with its own advertise
+# address, never by adding replicas behind one Service (the object cache is
+# in-process, and a pull that lands on the wrong replica 404s).
+networking:
+  mode: host
+  host:
+    dnsPolicy: ClusterFirstWithHostNet
+
+config:
+  txListen: "[2001:db8:3f::2]:8725"
+  subtreeListen: "[2001:db8:3f::2]:9143"
+  blockListen: "[2001:db8:3f::2]:9144"
+  retrievalListen: "[2001:db8:3f::2]:9145"
+  advertise: "" # REQUIRED: this bridge's own address, e.g. "http://[2001:db8:3f::2]:9145"
+
+  propagation:
+    - "http://192.0.2.10:20833"
+  kafka:
+    - "192.0.2.10:19092"
+
+  # REQUIRED, and its OWN id — never the primary bridge's. Synthetic, registered
+  # with no p2p service; empty is refused at install time (see values.yaml).
+  peerId: ""
+
+  blockchain: "192.0.2.10:20087"
+  localAsset: "http://192.0.2.10:20090/api/v1"
+  edgeIngress: "2001:db8:1::1"
+  # The whole point of this preset.
+  submitter: false
+  mineTag: "/teranode1/"
+
+  logFormat: "json"

@@ -1,0 +1,5 @@
+# A native sidecar needs Kubernetes 1.29 or newer.
+tunnel:
+  enabled: true
+  configSecret:
+    name: bridge-wg

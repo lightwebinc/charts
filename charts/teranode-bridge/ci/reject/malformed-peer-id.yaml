@@ -1,0 +1,5 @@
+# peerId must be a valid libp2p id.
+config:
+  kafka:
+    - 192.0.2.10:19092
+  peerId: not-a-peer-id
