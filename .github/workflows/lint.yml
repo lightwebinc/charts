@@ -19,6 +19,6 @@ jobs:
   # Bare defaults (sourceMode=ssm, no publishers) are rejected by design, so
   # the default render is off; ci/asm.yaml stands in for it.
   lint:
-    uses: lightwebinc/ci/.github/workflows/helm-lint.yml@e6098fcd1c4ecf7c0163e8599b4b3fb957562295 # main
+    uses: lightwebinc/ci/.github/workflows/helm-lint.yml@9611b3eb4844452ec05c941a05ca3ccb50de15e8 # main
     with:
       render-defaults: false
