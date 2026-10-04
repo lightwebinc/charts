@@ -19,6 +19,6 @@ jobs:
   # pairing (the binary fails fast at startup instead), so lint and the default
   # render set a per-replica bindSource.
   lint:
-    uses: lightwebinc/ci/.github/workflows/helm-lint.yml@bfcf31c675b8206453c90497534a72886933f0a9 # main
+    uses: lightwebinc/ci/.github/workflows/helm-lint.yml@3f438e60ade351107a3d1601955ebbf34de8caf1 # v0.1.0
     with:
       set: --set config.bindSource=2001:db8::21
