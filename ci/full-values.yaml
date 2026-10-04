@@ -1,0 +1,14 @@
+# Every optional object enabled: ServiceMonitor, PDB, NetworkPolicy, HPA.
+networking:
+  mode: host
+config:
+  sourceMode: asm
+metrics:
+  serviceMonitor:
+    enabled: true
+podDisruptionBudget:
+  enabled: true
+networkPolicy:
+  enabled: true
+autoscaling:
+  enabled: true

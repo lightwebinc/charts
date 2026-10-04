@@ -1,0 +1,6 @@
+# Default networking (Multus secondary interface) with a per-replica SSM source.
+networking:
+  multus:
+    fabricIPv6: fd20::21/64
+config:
+  bindSource: fd20::21

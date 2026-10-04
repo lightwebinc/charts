@@ -1,68 +1,24 @@
 name: lint
 
 on:
+  # main only: a branch with a PR is covered by the pull_request run.
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
 
 concurrency:
-  group: lint-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
+  # Render scenarios live in ci/*.yaml and examples/*.yaml. The defaults use
+  # sourceMode=ssm with an empty bindSource; the schema does not enforce the
+  # pairing (the binary fails fast at startup instead), so lint and the default
+  # render set a per-replica bindSource.
   lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - uses: azure/setup-helm@v4
-        with:
-          version: v3.16.0
-
-      # Defaults are sourceMode=ssm with config.bindSource empty. The schema does
-      # NOT enforce the pairing (the BINARY fails fast at startup instead), so
-      # lint/template set a per-replica bindSource to render a valid SSM deploy.
-      - name: helm lint (defaults + bindSource)
-        run: helm lint . --set config.bindSource=2001:db8::21
-
-      - name: helm lint (strict)
-        run: helm lint . --strict --set config.bindSource=2001:db8::21
-
-      - name: helm template (multus default)
-        run: |
-          helm template release-test . \
-            --set networking.multus.fabricIPv6=fd20::21/64 \
-            --set config.bindSource=fd20::21 \
-            --debug > /tmp/render-multus.yaml
-          test -s /tmp/render-multus.yaml
-
-      - name: helm template (host network fallback, asm)
-        run: |
-          helm template release-test . \
-            --set networking.mode=host \
-            --set config.sourceMode=asm \
-            --debug > /tmp/render-host.yaml
-          test -s /tmp/render-host.yaml
-
-      - name: helm template (servicemonitor + pdb + networkpolicy + hpa enabled)
-        run: |
-          helm template release-test . \
-            --set networking.mode=host \
-            --set config.sourceMode=asm \
-            --set metrics.serviceMonitor.enabled=true \
-            --set podDisruptionBudget.enabled=true \
-            --set networkPolicy.enabled=true \
-            --set autoscaling.enabled=true \
-            --debug > /tmp/render-full.yaml
-          test -s /tmp/render-full.yaml
-
-      - name: helm template (examples — catch drift)
-        run: |
-          for f in examples/*.yaml; do
-            echo "::group::$f"
-            helm template release-test . -f "$f" --debug > "/tmp/render-$(basename "$f")"
-            test -s "/tmp/render-$(basename "$f")"
-            echo "::endgroup::"
-          done
+    uses: lightwebinc/ci/.github/workflows/helm-lint.yml@bfcf31c675b8206453c90497534a72886933f0a9 # main
+    with:
+      set: --set config.bindSource=2001:db8::21

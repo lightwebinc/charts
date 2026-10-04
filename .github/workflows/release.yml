@@ -7,37 +7,17 @@ on:
       confirm:
         description: 'Type RELEASE to publish chart to OCI registry'
         required: true
-
-permissions:
-  contents: write
-  packages: write
-  pages: write
-  id-token: write
+      dry-run:
+        description: 'Package only, push nothing'
+        type: boolean
+        default: false
 
 jobs:
   release:
-    if: github.event.inputs.confirm == 'RELEASE'
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - uses: azure/setup-helm@v4
-        with:
-          version: v3.16.0
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Package + push chart to OCI
-        run: |
-          helm package .
-          for tgz in *.tgz; do
-            helm push "$tgz" oci://ghcr.io/lightwebinc/charts
-          done
+    if: inputs.confirm == 'RELEASE'
+    permissions:
+      contents: read
+      packages: write
+    uses: lightwebinc/ci/.github/workflows/helm-release.yml@bfcf31c675b8206453c90497534a72886933f0a9 # main
+    with:
+      dry-run: ${{ inputs.dry-run }}
