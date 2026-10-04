@@ -1,0 +1,26 @@
+# Collapsed-node preset: retry-endpoint as a hostNetwork pod on a node that
+# also runs the multicast routing stack and a co-resident listener. Serves
+# BRC-126 NACK retransmission over the host fabric. Tolerate the data-plane
+# taint; pin with nodeSelector as needed.
+#
+#   helm install retry-node-1 . -f examples/collapsed-node.yaml \
+#     --set config.nackAddr=2001:db8::24
+networking:
+  mode: host
+  host:
+    dnsPolicy: ClusterFirstWithHostNet
+
+config:
+  metricsAddr: ":9400"
+  # Collapsed/mesh node: locally-emitted retransmits only reach the MFC (for
+  # fan-out onto the fabric tunnels) when multicast loop is on.
+  egressMulticastLoop: true
+  # NOTE: currently a no-op — the binary does not read EGRESS_HOPLIMIT yet.
+  # Raise the multicast hop limit at the host level if retransmits must
+  # survive the first mesh/tunnel hop.
+  egressHoplimit: 16
+
+tolerations:
+  - key: dataplane
+    operator: Exists
+    effect: NoSchedule

@@ -1,0 +1,247 @@
+# Default values for retry-endpoint.
+# Most binary flags are exposed under .config; advanced ones empty/disabled by default.
+# extraEnv-only: RL_SENDER_RATE / RL_SENDER_WINDOW, TEE_LISTEN and MC_JOIN_ENABLED
+# (tee ingest + join gate, image >= 1.10.1).
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/lightwebinc/retry-endpoint
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations: {}
+podLabels: {}
+# Matches the distroless/static:nonroot image (uid 65532). Enforces nonroot even if
+# the image is overridden. NET_ADMIN is granted below at the container level, which is
+# compatible with running as nonroot.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+# Multicast ingress + egress on dedicated fabric NIC requires NET_ADMIN.
+securityContext:
+  capabilities:
+    add: ["NET_ADMIN"]
+
+networking:
+  mode: multus
+  multus:
+    networkName: mcast-fabric
+    namespace: bsv-mcast
+    fabricIPv6: ""
+    interface: net1
+  host:
+    dnsPolicy: ClusterFirstWithHostNet
+
+# Most flags in retry-endpoint/config/config.go; -rl-sender-rate/-rl-sender-window,
+# -tee-listen and -mc-join-enabled are settable via extraEnv.
+config:
+  # Ingress (multicast receive)
+  mcIface: "eth0"
+  listenPort: 9001
+  shardBits: 2          # standardized at 2 across all charts and binary default
+  mcScope: "site"
+  mcGroupId: "0x000B"
+
+  # SSM (RFC 4607). See
+  # https://github.com/lightwebinc/bsv-multicast/blob/main/DESIGN.md#source-specific-multicast-ssm.
+  # sourceMode "ssm" requires at least one of ssmBootstrap.* or
+  # ssmPublishersStatic. retry-endpoint also EMITS NACK-discovery beacons,
+  # so set bindSource to the per-pod IPv6 from Multus/Whereabouts. SSM
+  # listeners pre-declare retry-endpoints in sources.bootstrap.beacon
+  # against this address.
+  sourceMode: "ssm"
+  bindSource: ""
+  ssmBootstrap:
+    manifest: []
+    beacon: []
+    subtreeAnnounce: []
+  ssmPublishersStatic: []
+  ssmBootstrapRefresh: "30s"
+
+  # Egress (retransmission)
+  egressIface: "eth0"   # comma-separated allowed
+  egressPort: 9001
+  # egressMulticastLoop -> EGRESS_MULTICAST_LOOP (sets the IPV6_MULTICAST_LOOP socket
+  # option). REQUIRED true on a COLLAPSED node: the kernel MFC only forwards the
+  # retry-endpoint's locally-emitted retransmits onto the fabric tunnels (and to a
+  # co-resident listener) when loop is on. null inherits the binary default (off).
+  # egressHoplimit is currently a NO-OP: the binary does not read EGRESS_HOPLIMIT
+  # (key kept for forward compatibility with shard-proxy's knob). Raise the
+  # multicast hop limit at the host level if retransmits must cross a mesh/tunnel hop.
+  egressMulticastLoop: null
+  egressHoplimit: 0
+  dedupWindow: "60s"
+
+  # NACK proxying (cross-domain recovery). When enabled, a cache miss is
+  # recovered from an upstream retry-endpoint and re-served into this domain.
+  # See bsv-multicast/docs/brc-126-retransmission-protocol.md.
+  proxyEnabled: false
+  upstreamRetryEndpoints: []   # host:port list; REQUIRED when proxyEnabled
+  proxyTimeout: "300ms"
+  proxyMaxEndpoints: 0         # 0 = all upstreams
+  proxyDedupWindow: "60s"
+  proxyWorkers: 4
+  proxyQueue: 1024
+
+  # NACK server
+  nackPort: 9300
+  # nackAddr is REQUIRED in containerized deployments. The binary will
+  # auto-detect from the egress interface if unset, but the detected SLAAC
+  # address may mismatch what listeners trust (per their RETRY_ENDPOINTS).
+  # Set explicitly to the pod's fabric IPv6 (no CIDR suffix).
+  nackAddr: ""
+  nackWorkers: 0        # 0 = NumCPU
+
+  # Cache — modular shard-common/cache backend.
+  # See https://github.com/lightwebinc/shard-common/blob/main/docs/cache-backend.md
+  cacheBackend: "memory"  # memory | redis | aerospike
+  redisAddr: ""           # required when cacheBackend=redis (Redis/Valkey/Dragonfly); cross-instance dedup with memory backend
+  # Aerospike Community Edition (required when cacheBackend=aerospike).
+  # TTL granularity is whole seconds, floor 1s — all frame TTLs satisfy this.
+  # The namespace must be provisioned on the cluster.
+  aerospikeHosts: ""              # comma-separated host:port (e.g. "aero-0:3000,aero-1:3000")
+  aerospikeNamespace: "cache"
+  aerospikeSet: "bre"
+  cacheDialTimeout: "1s"  # backend dial timeout
+  cacheOpTimeout: "1s"    # backend per-operation timeout (fail-open on exceed)
+  cacheTtl: "60s"
+  cacheTtlTx: "60s"
+  cacheTtlBlock: "10m"
+  cacheTtlSubtree: "5m"
+  # BRC-148 BEEF plane. beefEnabled joins the plane band (0x1000 + 2^beefShardBits)
+  # and caches/retransmits FrameVer 0x09 frames; beefShardBits must match the proxy;
+  # cacheTtlBeef is the V9 live-tail resend window.
+  #
+  # Requires image >= 1.7.0 — satisfied by the default appVersion. An older
+  # image.tag pin ignores the rendered BEEF env vars and joins no plane band.
+  cacheTtlBeef: "60s"
+  beefEnabled: false
+  beefShardBits: 0
+  # No beefMaxObjectBytes here: retry-endpoint caches BRC-130 fragments opaquely
+  # and never reassembles, so the binary takes no object-size bound. The bound
+  # lives on the ingress proxies and the reassembling listeners.
+  cacheTtlAnchor: "2m"
+  cacheMaxKeys: 0
+
+  # Rate limits
+  rlIpRate: 100
+  rlIpBurst: 10
+  rlChainRate: 500
+  rlChainWindow: "1m"
+  rlSequenceMax: 100
+  rlSequenceWindow: "1m"
+  rlGroupRate: 200
+  rlGroupBurst: 50
+  # rlThrottleResponse -> RL_THROTTLE_RESPONSE: reply to sequence/chain/group
+  # throttles with a 16-byte THROTTLED backoff hint (BRC-126 MsgType 0x13)
+  # instead of a silent drop; the per-IP flood tier never answers.
+  rlThrottleResponse: false
+
+  # Beacon (BRC-126) ADVERT multicast
+  beaconEnabled: true
+  beaconTier: 0
+  beaconPreference: 128
+  beaconInterval: "60s"
+  beaconScope: "site"     # site | org | global | both | all
+  beaconFlagsUnicast: false
+  beaconFlagsMulticast: true
+  beaconFlagsDraining: false
+
+  # Response suppression
+  suppressAck: false
+  suppressMiss: false
+
+  # BRC-132 subtree data
+  subtreeDataEnabled: false
+
+  # Runtime
+  drainTimeout: "0s"
+  debug: false  # deprecated alias for logLevel=debug
+  # Unified logging — see https://github.com/lightwebinc/shard-common/blob/main/docs/logging.md
+  logFormat: "text"   # text (stderr) | json (stdout, for fleet aggregation)
+  logLevel: "info"    # debug|info|warn|error; runtime-togglable via POST /loglevel + SIGHUP
+  traceSampling: 0    # 0..1 trace head sampling (0 = off; exports via otlpEndpoint; control-plane only)
+
+  # Observability
+  metricsAddr: ":9400"
+  instanceId: ""
+  otlpEndpoint: ""
+  otlpInterval: "30s"
+
+service:
+  type: ClusterIP
+  metricsPort: 9400
+
+metrics:
+  enabled: true
+  path: /metrics
+  port: 9400
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s
+    labels: {}
+    relabelings: []
+    metricRelabelings: []
+
+probes:
+  readiness:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  liveness:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+# Recovery component (frame cache + NACK serving / retransmit, cache-backend backed).
+# Lighter datapath than proxy/listener but cache lookups dominate; size memory to
+# your resend window. Conservative starting points — tune against your own load.
+# Empty ({}) yields BestEffort QoS and no admission control.
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+nodeSelector: {}
+tolerations: []
+affinity: {}
+priorityClassName: ""
+topologySpreadConstraints: []
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+networkPolicy:
+  enabled: false
+  ingressFrom: []
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 80
+
+extraEnv: []

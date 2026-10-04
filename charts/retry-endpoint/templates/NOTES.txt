@@ -1,0 +1,33 @@
+{{ include "retry-endpoint.fullname" . }} installed in namespace {{ .Release.Namespace }}.
+
+Networking mode: {{ .Values.networking.mode }}
+
+{{- if not .Values.config.nackAddr }}
+
+WARNING: config.nackAddr is empty.
+The binary will auto-detect from the egress interface. In containerized
+deployments this may resolve to a SLAAC address that listeners' RETRY_ENDPOINTS
+do not match — ACK/MISS responses will be silently filtered by the listeners.
+
+Set config.nackAddr to the pod's fabric IPv6 (no CIDR suffix) for reliable
+operation. With networking.mode=multus, this should equal the address in
+networking.multus.fabricIPv6 with the /64 mask stripped.
+{{- end }}
+
+{{- if eq .Values.config.cacheBackend "redis" }}
+{{- if not .Values.config.redisAddr }}
+
+ERROR: cacheBackend=redis but config.redisAddr is empty.
+Set config.redisAddr to your Redis service address (host:port).
+{{- end }}
+{{- end }}
+
+Metrics: http://{{ include "retry-endpoint.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.metricsPort }}{{ .Values.metrics.path }}
+
+Beacon (BRC-126):
+  Tier: {{ .Values.config.beaconTier }}
+  Preference: {{ .Values.config.beaconPreference }}
+  Interval: {{ .Values.config.beaconInterval }}
+  Scope: {{ .Values.config.beaconScope }}
+
+See https://github.com/lightwebinc/retry-endpoint-helm for the full values reference.

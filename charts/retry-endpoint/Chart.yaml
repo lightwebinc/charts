@@ -1,0 +1,55 @@
+apiVersion: v2
+name: retry-endpoint
+description: BSV multicast retry endpoint — caches frames and retransmits on NACK
+type: application
+version: 0.5.4
+# appVersion MUST equal a tag published on ghcr.io/lightwebinc/retry-endpoint
+# (the chart's tag:"" default pulls this). Images are published manually via the
+# binary repo's image-publish.yml workflow; bump appVersion ONLY in lockstep with
+# an image publish — binary git tags (v1.4.x) are NOT image tags until published.
+appVersion: "1.10.1"
+kubeVersion: ">= 1.27.0-0"
+keywords:
+  - bitcoin
+  - bsv
+  - multicast
+  - brc-124
+  - brc-126
+  - brc-128
+home: https://github.com/lightwebinc/retry-endpoint
+sources:
+  - https://github.com/lightwebinc/retry-endpoint
+  - https://github.com/lightwebinc/retry-endpoint-helm
+maintainers:
+  - name: lightwebinc
+    url: https://github.com/lightwebinc
+icon: https://raw.githubusercontent.com/lightwebinc/bsv-multicast/main/.assets/icon.svg
+annotations:
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/changes: |
+    - kind: changed
+      description: appVersion 1.9.1 — first image published since 1.6.0; the default image honours the BEEF plane envs (>= 1.7.0), binds the proxy fetch socket to the fabric source, and rejects beacon-tier 255 at config load
+    - kind: fixed
+      description: values.schema.json caps config.beaconTier at 254 (255 is the reserved static-seed sentinel)
+    - kind: added
+      description: NACK proxying config (proxyEnabled, upstreamRetryEndpoints, proxy tuning)
+    - kind: added
+      description: config.egressIface (retransmission egress iface, defaults separately from mcIface) + orchestrated-edge example
+    - kind: added
+      description: config.egressMulticastLoop / config.egressHoplimit (collapsed-node multicast egress)
+    - kind: added
+      description: config.rlThrottleResponse -> RL_THROTTLE_RESPONSE (opt-in THROTTLED backoff replies)
+    - kind: fixed
+      description: remove invalid 'link' value from beaconScope enum/comment (binary rejects it)
+    - kind: changed
+      description: document config.egressHoplimit as currently a no-op (binary does not read EGRESS_HOPLIMIT); rework orchestrated-edge example as collapsed-node
+    - kind: changed
+      description: values.schema.json caps config.shardBits at 12 (BRC-129 shard zoning)
+    - kind: changed
+      description: appVersion 1.6.0 (shard-bits validator 1-12; shard-common v0.14.3)
+    - kind: fixed
+      description: BEEF_SHARD_BITS no longer widens an explicit 0 to 4 (Go-template default treats 0 as empty)
+    - kind: removed
+      description: config.beefMaxObjectBytes (dead key — retry-endpoint caches fragments opaquely and takes no object bound)
+    - kind: changed
+      description: appVersion 1.10.1 — first image published since 1.9.2; the default image adds the tee ingest + join gate, cadence re-assertion of multicast joins, per-requester dedup on unicast recovery, retransmit-mode-aware proxy recovery, and FreeBSD co-bind (SO_REUSEPORT). Built with Go 1.27.1.

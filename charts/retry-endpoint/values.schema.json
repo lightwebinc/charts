@@ -1,0 +1,254 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "retry-endpoint values",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "replicaCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "resources": {
+      "type": "object"
+    },
+    "podSecurityContext": {
+      "type": "object"
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pullPolicy": {
+          "type": "string",
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ]
+        },
+        "tag": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "repository",
+        "pullPolicy"
+      ]
+    },
+    "networking": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "multus",
+            "host",
+            "unicast"
+          ]
+        }
+      },
+      "required": [
+        "mode"
+      ]
+    },
+    "config": {
+      "type": "object",
+      "properties": {
+        "mcIface": {
+          "type": "string"
+        },
+        "egressIface": {
+          "type": "string"
+        },
+        "nackAddr": {
+          "type": "string"
+        },
+        "listenPort": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "nackPort": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "egressPort": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "egressMulticastLoop": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "egressHoplimit": {
+          "type": "integer"
+        },
+        "proxyEnabled": {
+          "type": "boolean"
+        },
+        "upstreamRetryEndpoints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "proxyMaxEndpoints": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "proxyWorkers": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "proxyQueue": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "shardBits": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "mcScope": {
+          "type": "string",
+          "enum": [
+            "link",
+            "site",
+            "org",
+            "global"
+          ]
+        },
+        "sourceMode": {
+          "type": "string",
+          "enum": [
+            "asm",
+            "ssm"
+          ]
+        },
+        "bindSource": {
+          "type": "string"
+        },
+        "ssmBootstrap": {
+          "type": "object",
+          "properties": {
+            "manifest": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "beacon": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "subtreeAnnounce": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "ssmPublishersStatic": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ssmBootstrapRefresh": {
+          "type": "string"
+        },
+        "cacheBackend": {
+          "type": "string",
+          "enum": [
+            "memory",
+            "redis",
+            "aerospike"
+          ]
+        },
+        "aerospikeHosts": {
+          "type": "string"
+        },
+        "aerospikeNamespace": {
+          "type": "string"
+        },
+        "aerospikeSet": {
+          "type": "string"
+        },
+        "cacheDialTimeout": {
+          "type": "string"
+        },
+        "cacheOpTimeout": {
+          "type": "string"
+        },
+        "rlThrottleResponse": {
+          "type": "boolean"
+        },
+        "beaconScope": {
+          "type": "string",
+          "enum": [
+            "site",
+            "org",
+            "global",
+            "both",
+            "all"
+          ]
+        },
+        "beaconTier": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 254,
+          "description": "BRC-126 beacon tier, 0-254; 255 (0xFF) is reserved for static seeds"
+        },
+        "beaconPreference": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "debug": {
+          "type": "boolean"
+        },
+        "logFormat": {
+          "type": "string",
+          "enum": [
+            "text",
+            "json"
+          ]
+        },
+        "logLevel": {
+          "type": "string",
+          "enum": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ]
+        },
+        "traceSampling": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "beefEnabled": {
+          "type": "boolean",
+          "description": "join the BRC-148 band and cache/retransmit FrameVer 0x09 frames (incl. V3 fragments with OrigFrameVer 0x09)"
+        },
+        "beefShardBits": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 12,
+          "description": "BRC-148 plane width (band 0x1000 + 2^bits groups); 0 = single-group plane. MUST match the ingress proxies."
+        }
+      }
+    }
+  }
+}
