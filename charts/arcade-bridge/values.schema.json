@@ -1,0 +1,312 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "arcade-bridge values",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "replicaCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "resources": {
+      "type": "object"
+    },
+    "podSecurityContext": {
+      "type": "object"
+    },
+    "terminationGracePeriodSeconds": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pullPolicy": {
+          "type": "string",
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ]
+        },
+        "tag": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "repository",
+        "pullPolicy"
+      ]
+    },
+    "networking": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "pod",
+            "host"
+          ]
+        }
+      },
+      "required": [
+        "mode"
+      ]
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "prometheusRule": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "labels": {
+              "type": "object"
+            },
+            "rules": {
+              "type": "array"
+            },
+            "additionalRules": {
+              "type": "array"
+            }
+          }
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "ClusterIP",
+            "NodePort",
+            "LoadBalancer"
+          ]
+        },
+        "retrieval": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "ClusterIP",
+                "NodePort",
+                "LoadBalancer"
+              ]
+            },
+            "externalTrafficPolicy": {
+              "type": "string",
+              "enum": [
+                "",
+                "Cluster",
+                "Local"
+              ]
+            }
+          }
+        },
+        "facade": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "ClusterIP",
+                "NodePort",
+                "LoadBalancer"
+              ]
+            },
+            "externalTrafficPolicy": {
+              "type": "string",
+              "enum": [
+                "",
+                "Cluster",
+                "Local"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "extraArgs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "config": {
+      "type": "object",
+      "properties": {
+        "subtreeListen": {
+          "type": "string",
+          "pattern": ":[0-9]{1,5}$"
+        },
+        "blockListen": {
+          "type": "string",
+          "pattern": ":[0-9]{1,5}$"
+        },
+        "retrievalListen": {
+          "type": "string",
+          "pattern": ":[0-9]{1,5}$"
+        },
+        "facadeListen": {
+          "type": "string",
+          "pattern": ":[0-9]{1,5}$"
+        },
+        "metricsAddr": {
+          "type": "string",
+          "pattern": ":[0-9]{1,5}$",
+          "description": "Set metrics.enabled=false to switch the listener off; an empty value here would silently fall back to the binary default [::]:9167."
+        },
+        "maxObject": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "advertise": {
+          "type": "string",
+          "pattern": "^$|^https?://[^ ]+$",
+          "description": "Base URL merkle-service dials for fetches. Scheme required, API prefix NOT included (the announced URL is advertise + apiPrefix; the chart refuses a doubled path)."
+        },
+        "apiPrefix": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "kafka": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "merkle-service's Kafka bootstrap. A list here; the chart joins it with commas into the single -kafka flag the binary splits."
+        },
+        "subtreeTopic": {
+          "type": "string",
+          "minLength": 1
+        },
+        "blockTopic": {
+          "type": "string",
+          "minLength": 1
+        },
+        "peerId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Peer label on announcements; merkle-service keys its per-peer fetch-health breaker on it. Keep it STABLE, and give each bridge instance its own when running several."
+        },
+        "clientName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "edgeIngress": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Up-tunnel submit host(s), a FAILOVER list joined with commas into the single -edge-ingress flag. Non-empty enables the facade (never in mode=sink; the chart refuses that)."
+        },
+        "edgeTxPort": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "hydrateAsset": {
+          "type": "string",
+          "pattern": "^$|^https?://[^ ]+$",
+          "description": "Asset API base INCLUDING its prefix. Unlike advertise, this one is dialled exactly as given."
+        },
+        "cacheBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Object cache ceiling. The facade adds a fixed 256 MiB recent-submission cache on top; budget resources.limits.memory for the sum."
+        },
+        "cacheTtl": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "all",
+            "sink"
+          ]
+        },
+        "statsEvery": {
+          "type": "string"
+        }
+      }
+    },
+    "probes": {
+      "type": "object",
+      "properties": {
+        "readiness": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^/"
+            },
+            "initialDelaySeconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "periodSeconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "timeoutSeconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "failureThreshold": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "liveness": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^/"
+            },
+            "initialDelaySeconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "periodSeconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "timeoutSeconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "failureThreshold": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}

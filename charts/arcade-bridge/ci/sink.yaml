@@ -1,0 +1,4 @@
+# Sink mode: no announce flags and no facade, but retrieval stays (the binary
+# runs the retrieval plane unconditionally, sink included).
+config:
+  mode: sink

@@ -1,0 +1,10 @@
+# Every optional object enabled: ServiceMonitor, PrometheusRule, PDB, NetworkPolicy.
+metrics:
+  serviceMonitor:
+    enabled: true
+  prometheusRule:
+    enabled: true
+podDisruptionBudget:
+  enabled: true
+networkPolicy:
+  enabled: true

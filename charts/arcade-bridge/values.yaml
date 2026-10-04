@@ -1,0 +1,334 @@
+# Default values for arcade-bridge.
+#
+# The binary is FLAG-ONLY (no env fallback, no config file) so the Deployment
+# renders `args:` from `config` below. Empty string / 0 / "0s" / false are
+# OMITTED from the arg vector so the binary's own default applies. Anything not
+# modelled here goes verbatim into extraArgs.
+#
+# TWO EXCEPTIONS render unconditionally, because for them the zero value MEANS
+# something the omitted form can never express (omission = "use the binary
+# default", which for both is the non-zero one):
+#   config.statsEvery  "0s"  = no periodic stats block
+#   metrics.enabled    false = no metrics/health listener at all
+# Each is called out again at its key.
+
+replicaCount: 1
+# One replica is the intended shape, and scaling out is not free. The object
+# cache is IN-PROCESS: a pushed subtree lives only on the bridge that received
+# it, and every announcement names THIS bridge's retrieval plane. Put N replicas
+# behind the retrieval Service and (N-1)/N of merkle-service's fetches land on a
+# replica that never saw the object: an honest 404, which merkle-service's
+# per-peer fetch-health breaker then charges against the announced peer-id,
+# penalising the whole set for the topology mistake. Scale by adding releases,
+# each with its own config.advertise (and its own peerId), not replicas.
+
+image:
+  repository: ghcr.io/lightwebinc/arcade-bridge
+  pullPolicy: IfNotPresent
+  tag: "" # defaults to .Chart.appVersion
+
+# PUBLIC image, normally empty. Present for mirrored/private registries.
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations: {}
+podLabels: {}
+
+# Matches the distroless/static:nonroot image (uid 65532), and keeps holding
+# even if the image is overridden.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+# The bridge writes nothing to disk and needs no capability: it opens ordinary
+# TCP sockets, all above 1024. Move a lane below 1024 and you must add
+# NET_BIND_SERVICE here; the image runs as nonroot and the bind would fail at
+# startup with the lane never reaching "bound" (so /readyz stays 503 rather
+# than the pod looking healthy and deaf).
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+# pod  = ordinary CNI; the lanes, retrieval plane and facade are reached through
+#        the Services below. Right when merkle-service, Arcade and the delivery
+#        side can all route to cluster Services.
+# host = hostNetwork; the pod binds the node's own addresses. Right when the
+#        stack (or the delivery tunnel) can only reach a node address, the
+#        common case, since the bridge is a landing tier in front of a stack
+#        that lives on a LAN, not in this k8s cluster. In host mode the ports in
+#        `config` are HOST ports: only one bridge per node, and the rollout must
+#        stop the old pod before starting the new one (see updateStrategy).
+networking:
+  mode: pod # pod | host
+  host:
+    dnsPolicy: ClusterFirstWithHostNet
+
+# Empty => RollingUpdate for networking.mode=pod, Recreate for host (a rolling
+# update cannot bind the same host ports twice, so the new pod would sit in
+# CrashLoopBackOff until the old one goes away). Set explicitly to override.
+updateStrategy: {}
+
+config:
+  # ── Delivery lanes (inbound, one TCP listener per object class) ────────────
+  # The streams are bare: no length prefix, no type tag, so each lane carries
+  # exactly one class and objects are delimited by their own structure. The
+  # defaults are the CANONICAL lane ports shared with teranode-bridge: a landing
+  # site receives each object class once, on the same port, whichever bridge
+  # terminates it. Two bridges cannot bind these on one host, which is
+  # deliberate. A co-located Arcade + Teranode site runs ONE delivery slot into
+  # a local tee and the bridges move to distinct loopback ports behind it (see
+  # the binary repo's docs/deliver-once.md).
+  # [::] accepts on whatever address the delivery side reaches this pod on; pin
+  # to a specific address once the deployment has settled.
+  subtreeListen: "[::]:9143" # -subtree-listen BRC-143 push frames
+  blockListen: "[::]:9144" # -block-listen   BRC-144 push frames
+  # -max-object: per-object ceiling in bytes, both lanes. 0 = the objfmt codec
+  # default. Only raise it if a legitimate object exceeds that.
+  maxObject: 0
+
+  # ── Retrieval plane (merkle-service dials this) ────────────────────────────
+  # merkle-service learns of a subtree/block by announcement plus fetch: the
+  # bridge announces {hash, dataHubUrl} and merkle-service fetches the bytes
+  # from that URL. This is the server that answers. It runs in EVERY mode, sink
+  # included: /readyz requires it, and a sink still serves what it received.
+  retrievalListen: "[::]:9165" # -retrieval-listen (bind address)
+
+  # -advertise: the base URL MERKLE-SERVICE should dial. REQUIRED unless
+  # mode=sink. This is the single value that silently breaks proof ingest when
+  # wrong: announcements keep succeeding, fetches never arrive, and the only
+  # symptom is flat retrieval traffic against a rising announce count.
+  #
+  #   * It is what merkle-service's CONTAINERS can dial, not necessarily what
+  #     the bridge binds. Binding [::]:9165 and advertising a routable address
+  #     is the normal shape. Containers cannot dial loopback, and a v6-only
+  #     address needs the container network to route v6; the host's IPv4 the
+  #     containers can reach is the usual answer.
+  #   * BASE URL ONLY. Do NOT append apiPrefix: the announced URL is
+  #     advertise + apiPrefix, so putting /api/v1 in both doubles the path and
+  #     every merkle-service fetch 404s. The chart REFUSES to install that.
+  #   * No trailing slash (harmless, it is trimmed, but write it clean).
+  #   * Scheme required: http:// or https:// (schema-enforced).
+  #
+  # e.g. "http://192.0.2.10:9165" (host mode, node address)
+  #      "http://arcade-bridge-retrieval.bsv-mcast.svc.cluster.local:9165"
+  #        (pod mode, ONLY if merkle-service resolves this k8s cluster's DNS)
+  # helm install prints the exact URL that will be announced; check it.
+  # Note merkle-service's SSRF guard refuses private fetch addresses unless its
+  # environment sets DATAHUB_ALLOW_PRIVATE_IPS=true.
+  advertise: ""
+
+  # -api-prefix: path prefix the retrieval plane serves on. Must match what is
+  # announced; merkle-service appends /subtree/{hash} and /block/{hash} to
+  # advertise + this. There is no reason to change it against a stock stack.
+  apiPrefix: "/api/v1"
+
+  # ── Announcing to merkle-service ───────────────────────────────────────────
+  # -kafka: merkle-service's Kafka bootstrap. REQUIRED unless mode=sink.
+  # A YAML list here; the chart joins it with commas into the single -kafka
+  # flag the binary splits (this differs from teranode-bridge-helm, whose
+  # binary takes repeated flags). The brokers must advertise a listener that
+  # resolves FROM THIS POD: a mis-advertised external listener passes the
+  # startup ping and then fails at produce time.
+  kafka: [] # e.g. ["192.0.2.10:19092"]
+
+  # Must match merkle-service's own topic configuration; these defaults match
+  # its stock names. An announcement produced to a topic nobody consumes is
+  # silently ineffective: the object is never fetched, never proved, and only
+  # shows as a growing announce/retrieval gap.
+  subtreeTopic: "subtree" # -subtree-topic
+  blockTopic: "block" # -block-topic
+
+  # -peer-id: peer label stamped on announcements. Never dialed; merkle-service
+  # keys its per-peer fetch-health breaker on it, so keep it STABLE, a changing
+  # id resets breaker history. Unlike teranode-bridge there is no libp2p catchup
+  # gate here and the default is safe; give each bridge instance its own label
+  # when running several.
+  peerId: "arcade-bridge"
+  clientName: "arcade-bridge" # -client-name  clientName stamped on announcements
+
+  # ── Facade and up-tunnel (Arcade's broadcast path) ─────────────────────────
+  # The facade serves the Teranode-shaped POST /txs surface Arcade's propagation
+  # already speaks, and forwards accepted transactions up the tunnel as ONE bare
+  # extended-format stream on the open class. It starts ONLY when edgeIngress is
+  # non-empty, and never in mode=sink (the chart refuses that contradiction).
+  # Point Arcade at it by listing the facade Service in datahub_urls.
+  facadeListen: "[::]:9166" # -facade-listen  POST /txs, POST /tx, GET /health
+
+  # -edge-ingress: up-tunnel tx submit host(s), reachable only through the
+  # tunnel. A YAML list here, joined with commas into the single flag (the
+  # binary splits and treats it as a FAILOVER list; with a dual-homed tunnel
+  # these are the side-A and side-B slot inners).
+  edgeIngress: [] # e.g. ["2001:db8:59::a", "2001:db8:59::b"]
+  edgeTxPort: 8725 # -edge-tx-port  fabric ingress port for the bare EF stream
+
+  # -hydrate-asset: optional asset API base INCLUDING its prefix, e.g.
+  # "http://192.0.2.20:20090/api/v1", used to fetch parents the
+  # recent-submission cache misses. Unlike advertise (which the chart appends
+  # apiPrefix to), this one is dialled exactly as given, so it carries the asset
+  # service's own prefix. Only meaningful with the facade on; the chart refuses
+  # it without edgeIngress rather than render a flag the binary would ignore.
+  hydrateAsset: ""
+
+  # ── Cache ──────────────────────────────────────────────────────────────────
+  # This is a cache, not a store of record. -cache-ttl must comfortably exceed
+  # merkle-service's worst-case Kafka consumer lag: a fetch after expiry is an
+  # honest 404 that its stale-announcement grace then has to excuse, and that
+  # 404 charges this bridge's fetch-health. One object cache of cacheBytes; the
+  # facade adds a FIXED 256 MiB recent-submission cache when enabled. Budget
+  # resources.limits.memory for the sum, not for the number written here.
+  cacheBytes: 1073741824 # -cache-bytes
+  cacheTtl: "30m" # -cache-ttl
+
+  # ── Process ────────────────────────────────────────────────────────────────
+  # -mode: all = receive + cache + serve + announce (+ facade if edgeIngress is
+  # set). sink = receive, count and serve only: no Kafka, no facade, no targets
+  # required. Lanes still run and still enforce framing, so sink is how you burn
+  # in a delivery slot before the Arcade stack attaches, or separate
+  # object-plane faults from stack-side ones.
+  mode: "all" # all | sink
+  # -stats-every: interval between structured stats log blocks. RENDERED
+  # UNCONDITIONALLY: "0s" disables periodic stats, which omission would turn
+  # back into the binary's 1m.
+  statsEvery: "1m"
+  # -metrics-addr: HTTP listener for /metrics, /healthz, /readyz. The probes
+  # below hang off this listener; see metrics.enabled to turn the whole thing
+  # off (setting this to "" here would NOT: an empty value is omitted and the
+  # binary default [::]:9167 would apply).
+  metricsAddr: "[::]:9167"
+
+# Appended verbatim after every rendered flag, for what is not modelled above.
+# It can also override: a repeated flag takes the LAST value. Overriding this
+# way hides the real value from `helm get values`, so prefer the key.
+extraArgs: []
+
+# The binary reads NO environment variable. This is for the Go runtime
+# (GOMEMLIMIT, GOMAXPROCS) and for values you want to reference from extraArgs
+# via kubelet's $(VAR) expansion.
+extraEnv: []
+
+# Ports are DERIVED from the config.*Listen addresses: one source of truth, so
+# a Service port can never drift from what the process actually binds.
+service:
+  # Delivery lanes (subtree/block) + metrics. Its callers are on the delivery
+  # side of the fabric.
+  type: ClusterIP
+  annotations: {}
+  # The retrieval plane gets its OWN Service because its caller is the other
+  # side entirely: merkle-service, fetching what was announced, and that side
+  # usually needs a different exposure (a fixed LoadBalancer address, or a node
+  # address its network routes). Whatever address this resolves to is what
+  # config.advertise must name.
+  retrieval:
+    type: ClusterIP
+    annotations: {}
+    loadBalancerIP: ""
+    # Local preserves the client source address and avoids a second hop; it
+    # requires the fetching stack to reach a node that actually runs a pod.
+    externalTrafficPolicy: ""
+  # The facade's caller is Arcade's propagation (datahub_urls), a third
+  # audience again. Rendered only when the facade is enabled (edgeIngress set,
+  # mode not sink).
+  facade:
+    type: ClusterIP
+    annotations: {}
+    loadBalancerIP: ""
+    externalTrafficPolicy: ""
+
+metrics:
+  # false renders -metrics-addr= (explicitly empty) to switch off the listener
+  # entirely: /metrics, /healthz and /readyz all go with it, and so do the
+  # probes below, which have nowhere else to point.
+  enabled: true
+  path: /metrics
+
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s
+    labels: {}
+    relabelings: []
+    metricRelabelings: []
+
+  # Alert rules over the arcade_bridge_* series. Requires the Prometheus
+  # Operator. `additionalRules` is appended verbatim, and `rules: []` replaces
+  # the built-in set entirely.
+  prometheusRule:
+    enabled: false
+    labels: {}
+    rules: []
+    additionalRules: []
+
+# /readyz turns 200 once every lane is bound AND the retrieval plane is
+# listening; before that the bridge cannot do its job, so gate anything that
+# steers traffic on readiness, not on the pod merely running. /healthz is
+# always 200: it proves the process is alive, nothing more, which is exactly
+# what a liveness probe should assert.
+probes:
+  readiness:
+    enabled: true
+    path: /readyz
+    initialDelaySeconds: 3
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  liveness:
+    enabled: true
+    path: /healthz
+    initialDelaySeconds: 10
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+# Memory is dominated by the object cache (config.cacheBytes at the ceiling)
+# plus, with the facade on, a fixed 256 MiB recent-submission cache, so a limit
+# below that budget gets the pod OOM-killed exactly when the caches fill. These
+# are a starting point for the 1 GiB default with headroom; raise the limit
+# together with cacheBytes.
+resources:
+  requests:
+    cpu: 250m
+    memory: 1536Mi
+  limits:
+    cpu: "2"
+    memory: 2Gi
+
+# Long enough for in-flight announces and a streaming fetch to finish.
+terminationGracePeriodSeconds: 30
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+priorityClassName: ""
+topologySpreadConstraints: []
+
+# With the default single replica a PDB of minAvailable: 1 blocks node drains
+# outright. Enable it only alongside a deliberately scaled-out set of releases.
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+# Fail-closed: enabling the policy with an empty `from` list for a port admits
+# NO peers on it. The four ports have four different audiences, so they are
+# separate keys rather than one blanket rule: the delivery side has no business
+# reaching the retrieval plane, merkle-service none reaching the lanes, and
+# Arcade only the facade. Ignored under networking.mode=host (host traffic
+# never enters the pod network; restrict it with the node firewall).
+networkPolicy:
+  enabled: false
+  laneIngressFrom: [] # subtree/block, the delivery side
+  retrievalIngressFrom: [] # retrieval, merkle-service
+  facadeIngressFrom: [] # facade, Arcade's propagation
+  metricsIngressFrom: [] # metrics, Prometheus

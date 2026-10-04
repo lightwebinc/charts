@@ -1,0 +1,11 @@
+arcade-bridge-helm
+Copyright 2026 Lightweb Inc. (https://lightweb.net)
+
+=========================================================================
+
+This repository contains the Helm chart for deploying arcade-bridge on
+Kubernetes. The chart packages templates, default values, JSON Schema
+validation, and CI workflows; the application source lives in the
+arcade-bridge repository.
+
+=========================================================================

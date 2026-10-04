@@ -1,0 +1,34 @@
+{{- $c := .Values.config -}}
+{{- /* Delivery lanes + metrics. The retrieval plane and the facade are
+       deliberately NOT here: their callers are merkle-service and Arcade
+       respectively, not the delivery side, and each usually needs its own
+       exposure (see service-retrieval.yaml and service-facade.yaml). */ -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "arcade-bridge.fullname" . }}
+  labels:
+    {{- include "arcade-bridge.labels" . | nindent 4 }}
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- include "arcade-bridge.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: subtree
+      port: {{ include "arcade-bridge.port" $c.subtreeListen | int }}
+      targetPort: subtree
+      protocol: TCP
+    - name: block
+      port: {{ include "arcade-bridge.port" $c.blockListen | int }}
+      targetPort: block
+      protocol: TCP
+    {{- if .Values.metrics.enabled }}
+    - name: metrics
+      port: {{ include "arcade-bridge.port" ($c.metricsAddr | default "[::]:9167") | int }}
+      targetPort: metrics
+      protocol: TCP
+    {{- end }}

@@ -1,0 +1,27 @@
+# Sink: receive, parse, count and serve, with NO announce targets at all.
+#
+#   helm install burn-in . -f examples/sink.yaml
+#
+# A valid, useful deployment, not a degraded one. Use it to burn in a delivery
+# slot before the Arcade stack attaches, or to separate object-plane faults
+# from stack-side ones: the lanes still run and still enforce framing, so the
+# lane error counters still catch a sender writing malformed objects or two
+# classes crossed onto one lane.
+#
+# No Kafka, no facade (the chart refuses config.edgeIngress in sink mode). The
+# retrieval plane STILL runs, because the binary serves it unconditionally and
+# /readyz requires it; a local poke at /api/v1/subtree/{hash} is a handy check
+# that objects really landed.
+config:
+  mode: sink
+  statsEvery: "10s"
+
+# No stack to cache for: the cache only needs to hold what the lanes push
+# through it, which sink never announces.
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi

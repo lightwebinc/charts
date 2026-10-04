@@ -1,0 +1,34 @@
+{{- $c := .Values.config -}}
+{{- /* The fetch-back address. merkle-service pulls every announced subtree and
+       block from whatever config.advertise names, so that value and this
+       Service must resolve to the same place — a Service of its own keeps the
+       stack-facing exposure independent of the delivery-facing one, and gives
+       the address something stable to be. Rendered in EVERY mode, sink
+       included: the binary serves the retrieval plane unconditionally (and
+       /readyz requires it), so a sink still answers local pokes for what it
+       has received. */ -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "arcade-bridge.fullname" . }}-retrieval
+  labels:
+    {{- include "arcade-bridge.labels" . | nindent 4 }}
+  {{- with .Values.service.retrieval.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.retrieval.type }}
+  {{- with .Values.service.retrieval.loadBalancerIP }}
+  loadBalancerIP: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.service.retrieval.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+  {{- end }}
+  selector:
+    {{- include "arcade-bridge.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: retrieval
+      port: {{ include "arcade-bridge.port" $c.retrievalListen | int }}
+      targetPort: retrieval
+      protocol: TCP

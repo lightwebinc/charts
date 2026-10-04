@@ -1,0 +1,5 @@
+# edgeIngress is a facade setting; sink mode has no facade.
+config:
+  mode: sink
+  edgeIngress:
+    - 2001:db8:59::a

@@ -1,0 +1,32 @@
+# Feed only: proof ingest through the fabric, broadcast still direct.
+#
+#   helm install bridge . -f examples/feed.yaml \
+#     --set config.advertise=http://192.0.2.10:9165
+#
+# The bridge terminates the subtree and block lanes, caches the objects,
+# announces them into merkle-service's Kafka pointing at itself, and serves the
+# fetches locally. Arcade's broadcast path is untouched (no facade: the chart
+# renders no facade Service and no facade flags while config.edgeIngress is
+# empty).
+#
+# Addresses use the documentation ranges (RFC 5737 192.0.2.0/24, RFC 3849
+# 2001:db8::/32). Substitute your own.
+config:
+  # REQUIRED: the base URL merkle-service's CONTAINERS can dial, WITHOUT the
+  # API prefix (the announced URL is advertise + apiPrefix). Containers cannot
+  # dial loopback; the host address they can reach is the usual answer.
+  advertise: "" # e.g. "http://192.0.2.10:9165"
+
+  # merkle-service's Kafka bootstrap: a list, joined into the single
+  # comma-separated -kafka flag. The broker must advertise a listener this pod
+  # can dial back.
+  kafka:
+    - "192.0.2.10:19092"
+
+  # Stock merkle-service topic names; change only if the stack did.
+  subtreeTopic: "subtree"
+  blockTopic: "block"
+
+  # Stable label merkle-service keys its fetch-health breaker on. Give each
+  # bridge instance its own when running several.
+  peerId: "arcade-bridge"

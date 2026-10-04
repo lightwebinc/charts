@@ -1,0 +1,105 @@
+{{- if and .Values.metrics.enabled .Values.metrics.prometheusRule.enabled }}
+{{- /*
+  Alert rules for the bridge, over series the collector actually exports
+  (arcade_bridge_* only). A deliberately small, honest set: readiness itself is
+  kubelet's /readyz probe (every lane bound + retrieval listening), so no rule
+  here restates it over a metric that does not exist.
+
+  `rules` REPLACES this set outright; `additionalRules` appends to it.
+*/ -}}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "arcade-bridge.fullname" . }}
+  labels:
+    {{- include "arcade-bridge.labels" . | nindent 4 }}
+    {{- with .Values.metrics.prometheusRule.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    - name: arcade-bridge
+      rules:
+      {{- with .Values.metrics.prometheusRule.rules }}
+        {{- toYaml . | nindent 8 }}
+      {{- else }}
+        - alert: ArcadeBridgeAnnounceFailures
+          expr: increase(arcade_bridge_announce_failures_total[10m]) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Announcement publishes to merkle-service are failing"
+            description: >-
+              merkle-service is not hearing about objects this bridge holds. An
+              object it is never told about is never fetched and never proved,
+              which is as lost as a failed delivery. Check the Kafka bootstrap
+              and remember the advertised-listener rule: the broker must
+              advertise an address this pod can dial back.
+
+        - alert: ArcadeBridgeLaneErrors
+          expr: increase(arcade_bridge_lane_errors_total[10m]) > 0
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Sustained handler errors on lane {{ "{{ $labels.lane }}" }}"
+            description: >-
+              A lane handler failed on an object: the announcement to
+              merkle-service did not produce, or the frame could not be
+              parsed for its inline block fields. The object stays cached and
+              servable but was never announced; only a redelivery announces it
+              again, so an object delivered once during the fault stays
+              unannounced. Framing faults on the bare stream are not in this
+              series - see ArcadeBridgeLaneDropped.
+
+        - alert: ArcadeBridgeLaneDropped
+          expr: increase(arcade_bridge_lane_connections_dropped_total[15m]) > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Connections dropped on a framing fault on lane {{ "{{ $labels.lane }}" }}"
+            description: >-
+              An object on the bare stream could not be walked, or exceeded
+              config.maxObject. There is no resync point, so the connection is
+              dropped and the edge redials - every object still in flight on
+              that connection is lost. Sustained growth means a sender is
+              emitting frames of the wrong shape, or the ceiling is set below
+              the objects this lane actually carries.
+
+        - alert: ArcadeBridgeUptunnelStalled
+          expr: >-
+            rate(arcade_bridge_uptunnel_failures_total[5m]) > 0
+            and rate(arcade_bridge_uptunnel_sent_total[5m]) == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Up-tunnel submits are failing and nothing is getting through"
+            description: >-
+              The fabric ingress is unreachable on every configured
+              edge-ingress host, so Arcade's broadcasts are being answered
+              with failures. Failures alongside a nonzero send rate would be a
+              flaky path; failures with the send rate flat at zero is an
+              outage of the broadcast plane.
+
+        - alert: ArcadeBridgeMissingParents
+          expr: rate(arcade_bridge_facade_txs_total{result="missing_parent"}[15m]) > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Facade hydration cannot find transaction parents"
+            description: >-
+              Standard-serialized submissions need their parents to be
+              hydrated to extended format, and the recent-submission cache
+              plus the optional asset fallback are both missing them. Under a
+              chained workload this means the recent cache is undersized or
+              config.hydrateAsset is unset. Arcade retries these
+              (TX_MISSING_PARENT), so it is degraded latency, not loss.
+      {{- end }}
+      {{- with .Values.metrics.prometheusRule.additionalRules }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

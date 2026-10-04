@@ -1,0 +1,8 @@
+# Facade on: list values render as comma-joined single flags.
+config:
+  edgeIngress:
+    - 2001:db8:59::a
+    - 2001:db8:59::b
+  kafka:
+    - 192.0.2.10:19092
+    - 192.0.2.11:19092

@@ -1,0 +1,6 @@
+# Facade off by default: no facade Service, no facade flags.
+- -edge-ingress
+- -facade-listen
+- facade
+# Empty advertise/kafka in mode=all warns rather than fails.
++ helm.sh/chart-warnings

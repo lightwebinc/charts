@@ -1,0 +1,35 @@
+{{- if .Values.metrics.enabled }}
+{{- $c := .Values.config -}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "arcade-bridge.fullname" . }}-test-metrics"
+  labels:
+    {{- include "arcade-bridge.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: probe
+      image: busybox:1.36
+      command:
+        - sh
+        - -c
+        - |
+          set -e
+          base=http://{{ include "arcade-bridge.fullname" . }}:{{ include "arcade-bridge.port" ($c.metricsAddr | default "[::]:9167") }}
+          wget -q -O - "$base/healthz" > /dev/null
+          wget -q -O - "$base{{ .Values.metrics.path }}" > /dev/null
+          # /readyz answers 200 only once every lane is bound and the retrieval
+          # plane is listening, the one check that distinguishes a live bridge
+          # from a running process.
+          wget -q -O - "$base/readyz" > /dev/null
+          {{- if include "arcade-bridge.facadeEnabled" . }}
+          # The facade's own health route, on its own Service. Arcade probes
+          # this to restore a tripped endpoint breaker; any HTTP response
+          # satisfies it, and it must exist whenever the facade is enabled.
+          wget -q -O - "http://{{ include "arcade-bridge.fullname" . }}-facade:{{ include "arcade-bridge.port" ($c.facadeListen | default "[::]:9166") }}/health" > /dev/null
+          {{- end }}
+{{- end }}

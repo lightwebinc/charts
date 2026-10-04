@@ -1,0 +1,56 @@
+{{- if .Values.networkPolicy.enabled }}
+{{- /* Four ports, four audiences, four rules: the delivery side reaches the
+       lanes, merkle-service reaches the retrieval plane, Arcade reaches the
+       facade, Prometheus reaches metrics. Fail-closed — an empty `from` for a
+       rule admits no peer on that port. Under networking.mode=host this policy
+       matches nothing that matters: host traffic never enters the pod network,
+       so the node firewall is the real control. */ -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "arcade-bridge.fullname" . }}
+  labels:
+    {{- include "arcade-bridge.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "arcade-bridge.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: subtree
+          protocol: TCP
+        - port: block
+          protocol: TCP
+      {{- with .Values.networkPolicy.laneIngressFrom }}
+      from:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- /* The retrieval plane runs in every mode, sink included. */}}
+    - ports:
+        - port: retrieval
+          protocol: TCP
+      {{- with .Values.networkPolicy.retrievalIngressFrom }}
+      from:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- if include "arcade-bridge.facadeEnabled" . }}
+    - ports:
+        - port: facade
+          protocol: TCP
+      {{- with .Values.networkPolicy.facadeIngressFrom }}
+      from:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.metrics.enabled }}
+    - ports:
+        - port: metrics
+          protocol: TCP
+      {{- with .Values.networkPolicy.metricsIngressFrom }}
+      from:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- end }}
+{{- end }}

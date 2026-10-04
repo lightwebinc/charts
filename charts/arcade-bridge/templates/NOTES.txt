@@ -1,0 +1,91 @@
+{{- $c := .Values.config -}}
+{{- $sink := eq ($c.mode | default "all") "sink" -}}
+{{- $facade := include "arcade-bridge.facadeEnabled" . -}}
+{{- $full := include "arcade-bridge.fullname" . -}}
+arcade-bridge {{ .Chart.AppVersion }} deployed as {{ $full }} in {{ .Release.Namespace }} (mode: {{ $c.mode | default "all" }}{{ if eq .Values.networking.mode "host" }}, hostNetwork{{ end }}).
+
+Delivery lanes (inbound):
+  subtree (BRC-143)  {{ $c.subtreeListen }}
+  block   (BRC-144)  {{ $c.blockListen }}
+
+Retrieval plane: {{ $c.retrievalListen }} -> Service {{ $full }}-retrieval:{{ include "arcade-bridge.port" $c.retrievalListen }} ({{ .Values.service.retrieval.type }})
+
+{{- if $sink }}
+
+Sink mode: objects are received, parsed, counted and served. No Kafka announce,
+no facade, and no targets required. The retrieval plane still runs (a sink
+still answers for what it received, and /readyz requires the listener). Watch
+the lane error counters and the cache stats.
+{{- else }}
+{{- if $c.advertise }}
+Announced fetch URL: {{ include "arcade-bridge.announceUrl" . }}
+  Check this is what MERKLE-SERVICE'S CONTAINERS can dial (not loopback, and
+  not a v6-only address unless their network routes v6). Every subtree and
+  block announcement carries it; if it is unreachable or wrong, announcements
+  keep succeeding, no fetch ever arrives, and every failed fetch charges this
+  bridge's fetch-health breaker under peer id {{ $c.peerId | default "arcade-bridge" | quote }}.
+{{- else }}
+
+WARNING: config.advertise is EMPTY and mode is not sink. The bridge exits 2 at
+startup. Set it to the base URL merkle-service can dial for fetches, WITHOUT
+the API prefix (the announced URL is advertise + config.apiPrefix):
+  --set config.advertise=http://<address-merkle-service-can-dial>:{{ include "arcade-bridge.port" $c.retrievalListen }}
+If merkle-service resolves this k8s cluster's DNS, that address is:
+  http://{{ $full }}-retrieval.{{ .Release.Namespace }}.svc.cluster.local:{{ include "arcade-bridge.port" $c.retrievalListen }}
+{{- end }}
+{{- if not $c.kafka }}
+
+WARNING: config.kafka is EMPTY and mode is not sink. The bridge exits 2 at
+startup. It is a list, joined into the single comma-separated -kafka flag:
+  --set config.kafka[0]=<merkle-service-kafka>:19092
+Remember the advertised-listener rule: the broker must advertise an address
+this pod can dial back.
+{{- end }}
+
+{{- if $facade }}
+
+Facade ENABLED: {{ $c.facadeListen | default "[::]:9166" }} -> Service {{ $full }}-facade:{{ include "arcade-bridge.port" ($c.facadeListen | default "[::]:9166") }} ({{ .Values.service.facade.type }})
+  Point Arcade's propagation at it (datahub_urls). Accepted transactions go up
+  the tunnel as one bare EF stream to port {{ $c.edgeTxPort | default 8725 }} on: {{ join ", " $c.edgeIngress }}
+  (a failover list; the binary walks it in order).
+{{- if not $c.hydrateAsset }}
+  config.hydrateAsset is unset: parents missing from the recent-submission
+  cache fail that transaction as TX_MISSING_PARENT (Arcade retries them). Set
+  it to an asset API base including its prefix if chained submissions arrive
+  faster than their parents age out.
+{{- end }}
+{{- else }}
+
+Facade OFF (config.edgeIngress is empty): Arcade's broadcast path stays on its
+own datahubs; this bridge only feeds merkle-service. Set config.edgeIngress to
+enable the facade.
+{{- end }}
+{{- end }}
+
+{{- if gt (int .Values.replicaCount) 1 }}
+
+WARNING: replicaCount={{ .Values.replicaCount }}. The object cache is IN-PROCESS and every
+announcement names this release's retrieval address, so fetches that land on a
+replica which never received the object return 404, and merkle-service's
+per-peer fetch-health breaker charges the shared peer id for it. Scale with one
+release per bridge, each with its own config.advertise and its own peerId.
+{{- end }}
+
+{{- if .Values.metrics.enabled }}
+
+Metrics: http://{{ $full }}.{{ .Release.Namespace }}.svc:{{ include "arcade-bridge.port" ($c.metricsAddr | default "[::]:9167") }}{{ .Values.metrics.path }}  (arcade_bridge_* ; also /healthz, /readyz)
+/readyz answers 200 only once every lane is bound and the retrieval plane is
+listening; /healthz is always 200.
+{{- if not .Values.metrics.prometheusRule.enabled }}
+No alert rules installed. Set metrics.prometheusRule.enabled=true (needs the
+Prometheus Operator) for the built-in set: announce failures, lane errors and
+rejects, up-tunnel stalls, missing parents.
+{{- end }}
+{{- else }}
+
+NOTE: metrics.enabled=false. No /metrics, /healthz or /readyz, and therefore no
+probes. The bridge only reports through its stats log lines.
+{{- end }}
+
+Rendered args:
+{{ include "arcade-bridge.args" . | trim | indent 2 }}

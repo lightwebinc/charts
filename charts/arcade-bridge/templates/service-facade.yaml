@@ -1,0 +1,34 @@
+{{- $c := .Values.config -}}
+{{- if include "arcade-bridge.facadeEnabled" . }}
+{{- /* Arcade's submit address. Arcade's propagation POSTs /txs to whatever its
+       datahub_urls lists, so point that list at this Service (or, under
+       networking.mode=host, at the node address the facade binds). Rendered
+       only when the facade actually starts — edgeIngress set and mode != sink,
+       the binary's own condition — so the Service can never name a listener
+       the process does not open. */ -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "arcade-bridge.fullname" . }}-facade
+  labels:
+    {{- include "arcade-bridge.labels" . | nindent 4 }}
+  {{- with .Values.service.facade.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.facade.type }}
+  {{- with .Values.service.facade.loadBalancerIP }}
+  loadBalancerIP: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.service.facade.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+  {{- end }}
+  selector:
+    {{- include "arcade-bridge.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: facade
+      port: {{ include "arcade-bridge.port" ($c.facadeListen | default "[::]:9166") | int }}
+      targetPort: facade
+      protocol: TCP
+{{- end }}

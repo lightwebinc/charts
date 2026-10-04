@@ -1,0 +1,3 @@
+# hydrateAsset needs the facade on.
+config:
+  hydrateAsset: http://192.0.2.20:20090/api/v1
