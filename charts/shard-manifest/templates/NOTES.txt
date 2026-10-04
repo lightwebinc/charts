@@ -1,0 +1,22 @@
+{{- $fullname := include "shard-manifest.fullname" . -}}
+
+Thanks for installing {{ .Chart.Name }} ({{ .Chart.Version }}).
+
+The shard-manifest daemon is now emitting BRC-139 manifests every
+{{ .Values.manifest.announceInterval }} (jittered ±10 %) to the IPv6 multicast
+beacon group(s): {{ .Values.manifest.scope }} (port {{ .Values.manifest.port }}).
+
+Inspect health and metrics:
+
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ $fullname }} {{ .Values.metrics.port }}:{{ .Values.metrics.port }}
+  curl -s http://localhost:{{ .Values.metrics.port }}/healthz
+  curl -s http://localhost:{{ .Values.metrics.port }}/readyz
+  curl -s http://localhost:{{ .Values.metrics.port }}/metrics | grep '^bsm_'
+
+Tail logs:
+
+  kubectl --namespace {{ .Release.Namespace }} logs -l app.kubernetes.io/instance={{ .Release.Name }} -f
+
+Reminder: the daemon is informational only. Operators MUST coordinate
+shard_bits changes manually and bump `manifest.generationId` whenever the
+value changes.

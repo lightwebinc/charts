@@ -1,0 +1,4 @@
++ kind: ServiceMonitor
++ kind: PodDisruptionBudget
++ kind: NetworkPolicy
++ k8s.v1.cni.cncf.io/networks

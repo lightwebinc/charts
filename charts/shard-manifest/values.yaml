@@ -1,0 +1,170 @@
+# Default values for shard-manifest.
+#
+# The daemon is configured exclusively via environment variables. Each
+# values key maps to one daemon env var (unprefixed UPPER_SNAKE_CASE,
+# e.g. SHARD_BITS) and must agree with the rest of the multicast
+# network (especially `shardBits`).
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/lightwebinc/shard-manifest
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+# Networking modes:
+#   pod    — default primary CNI (works for any cluster with IPv6 multicast egress).
+#   host   — hostNetwork; pin to nodes with the fabric NIC.
+#   multus — attach a secondary NetworkAttachmentDefinition for the fabric NIC.
+networking:
+  mode: pod
+  multus:
+    networkName: mcast-fabric
+    namespace: bsv-mcast
+    fabricIPv6: ""
+    interface: net1
+  host:
+    dnsPolicy: ClusterFirstWithHostNet
+
+# BRC-139 manifest content
+manifest:
+  shardBits: 2                        # 0..12; MUST match the rest of the network
+  joinedGroups: ""                    # comma list of indices (hex/dec), or "all", or empty
+  # BRC-148 per-domain plane descriptors (DOMAINS env, comma-joined). Each entry:
+  #   id:bits=N[:ssm][:active][:slotspan=S][:generation=HEX32][:succbits=N:succepoch=T[:succgen=HEX][:succssm]]
+  # Requires image >= 0.3.0 — satisfied by the default appVersion; an older
+  # image.tag pin ignores DOMAINS.
+  domains: []                         # e.g. ["0x1:bits=12:active:ssm"]
+  bitmap: "auto"                      # auto | list | bitmap
+  roleHint: "generic"                 # generic | proxy | listener | retry-endpoint | producer | manifest-only
+  generationId: ""                    # 16-byte hex; bump whenever shardBits changes
+  authoritative: false                # set Flags.Authoritative on the wire
+  # Flags.PilotOnly: this manifest describes the DESIRED fleet state rather than
+  # the announcer's own joins (implies authoritative). Listener auto-join unions
+  # groups from pilot manifests only, so leaving this false makes
+  # config.autoShardConfig.shardIncludeFromManifest a no-op on consumers.
+  pilotOnly: false
+  # BRC-139 Successor block — announces a re-shard generation transition.
+  # Emitted only when generationId is set; shardBits must be within ±1 of
+  # the manifest's own shardBits, and transitionEpoch is Unix seconds
+  # at which the successor becomes the sole active generation.
+  successor:
+    generationId: ""                  # 16-byte hex; empty = no Successor block
+    shardBits: 0
+    transitionEpoch: 0
+    sourceMode: ""                    # asm|ssm; empty = inherit sourceMode
+  instanceId: ""                      # OTel service.instance.id; empty = pod name
+  scope: "site"                       # comma list: link,site,org,global
+  port: 9001                          # UDP destination port
+  mcGroupId: "0x000B"                 # IANA group-id (BRC-129)
+  iface: ""                           # egress interface; empty = auto-pick (set explicitly when using multus/host)
+  announceInterval: "300s"
+  ttl: "0s"                           # 0 = consumer default (3× interval)
+  debug: false  # deprecated alias for logLevel=debug
+  # Unified logging — see https://github.com/lightwebinc/shard-common/blob/main/docs/logging.md
+  logFormat: "json"   # text (stderr) | json (stdout; default for this daemon)
+  logLevel: "info"    # debug|info|warn|error; runtime-togglable via POST /loglevel + SIGHUP
+  traceSampling: 0    # 0..1 trace head sampling (0 = off; exports via otlp.endpoint)
+
+  # SSM (RFC 4607). See https://github.com/lightwebinc/bsv-multicast/blob/main/DESIGN.md#source-specific-multicast-ssm
+  # sourceMode "ssm" sets Flags.SourceModeSSM on every emitted manifest
+  # AND requires publishers to be non-empty. Each entry is an IPv6 literal
+  # or DNS name; the shard-manifest sender resolves AAAA records and
+  # includes them in the Flags.SourcesValid payload union.
+  sourceMode: "ssm"
+  publishers: []                       # ["shard-proxy-headless.svc.cluster.local"]
+  publishersRefresh: "30s"
+
+# Observability
+metrics:
+  enabled: true
+  port: 9091
+  path: /metrics
+  addr: "[::]:9091"                   # MUST agree with metrics.port
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s
+    labels: {}
+    relabelings: []
+    metricRelabelings: []
+
+otlp:
+  endpoint: ""                        # OTLP gRPC endpoint (e.g. otel-collector:4317)
+  interval: "15s"
+
+probes:
+  liveness:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+service:
+  type: ClusterIP
+  annotations: {}
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+priorityClassName: ""
+topologySpreadConstraints: []
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+# NetworkPolicy gating ingress (metrics scrape) and egress (multicast).
+networkPolicy:
+  enabled: false
+  # Allow Prometheus scrape from any pod with this label set.
+  ingressFrom:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: prometheus
+
+# Extra env vars merged onto the container env list.
+extraEnv: []

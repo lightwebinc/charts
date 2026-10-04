@@ -1,0 +1,42 @@
+{{- if .Values.networkPolicy.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "shard-manifest.fullname" . }}
+  labels:
+    {{- include "shard-manifest.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "shard-manifest.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        {{- toYaml .Values.networkPolicy.ingressFrom | nindent 8 }}
+      ports:
+        - port: metrics
+          protocol: TCP
+  egress:
+    # IPv6 multicast scopes for the manifest announcement.
+    - to:
+        - ipBlock:
+            cidr: ff05::/16
+        - ipBlock:
+            cidr: ff08::/16
+        - ipBlock:
+            cidr: ff0e::/16
+      ports:
+        - port: {{ .Values.manifest.port }}
+          protocol: UDP
+    # DNS, NTP.
+    - to: []
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+        - port: 123
+          protocol: UDP
+{{- end }}

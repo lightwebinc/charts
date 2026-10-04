@@ -1,0 +1,32 @@
+{{- /* Fail fast: the daemon rejects source-mode=ssm with empty publishers
+       (config.Load), which would otherwise CrashLoopBackOff. */ -}}
+{{- if and (eq .Values.manifest.sourceMode "ssm") (empty .Values.manifest.publishers) }}
+{{- fail "manifest.sourceMode=ssm requires a non-empty manifest.publishers (set manifest.publishers, or manifest.sourceMode=asm for lab use)" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "shard-manifest.fullname" . }}
+  labels:
+    {{- include "shard-manifest.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "shard-manifest.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- if eq .Values.networking.mode "multus" }}
+        {{- include "shard-manifest.multusAnnotation" . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "shard-manifest.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "shard-manifest.podSpec" . | nindent 6 }}

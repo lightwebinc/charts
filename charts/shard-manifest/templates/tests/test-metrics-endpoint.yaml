@@ -1,0 +1,23 @@
+{{- if .Values.metrics.enabled -}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "shard-manifest.fullname" . }}-test-metrics
+  labels:
+    {{- include "shard-manifest.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: curl
+      image: curlimages/curl:8.10.1
+      command:
+        - sh
+        - -c
+        - |
+          set -eu
+          curl -fsS "http://{{ include "shard-manifest.fullname" . }}:{{ .Values.metrics.port }}/healthz" >/dev/null
+          curl -fsS "http://{{ include "shard-manifest.fullname" . }}:{{ .Values.metrics.port }}{{ .Values.metrics.path }}" | grep -q '^bsm_'
+{{- end }}

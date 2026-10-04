@@ -1,0 +1,15 @@
+networking:
+  mode: multus
+metrics:
+  serviceMonitor:
+    enabled: true
+podDisruptionBudget:
+  enabled: true
+networkPolicy:
+  enabled: true
+manifest:
+  shardBits: 4
+  joinedGroups: all
+  roleHint: proxy
+  publishers:
+  - shard-proxy-headless.svc.cluster.local

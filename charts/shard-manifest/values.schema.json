@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "shard-manifest values",
+  "type": "object",
+  "properties": {
+    "replicaCount": { "type": "integer", "minimum": 0 },
+    "image": {
+      "type": "object",
+      "properties": {
+        "repository": { "type": "string" },
+        "pullPolicy": { "enum": ["Always", "IfNotPresent", "Never"] },
+        "tag": { "type": "string" }
+      }
+    },
+    "imagePullSecrets": { "type": "array" },
+    "nameOverride": { "type": "string" },
+    "fullnameOverride": { "type": "string" },
+    "serviceAccount": {
+      "type": "object",
+      "properties": {
+        "create": { "type": "boolean" },
+        "name": { "type": "string" },
+        "annotations": { "type": "object" }
+      }
+    },
+    "podAnnotations": { "type": "object" },
+    "podLabels": { "type": "object" },
+    "podSecurityContext": { "type": "object" },
+    "securityContext": { "type": "object" },
+    "networking": {
+      "type": "object",
+      "properties": {
+        "mode": { "enum": ["pod", "host", "multus"] }
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "required": ["shardBits"],
+      "properties": {
+        "shardBits": { "type": "integer", "minimum": 0, "maximum": 12 },
+        "joinedGroups": { "type": "string" },
+        "domains": { "type": "array", "items": { "type": "string" } },
+        "bitmap": { "enum": ["auto", "list", "bitmap"] },
+        "roleHint": { "enum": ["generic", "proxy", "listener", "retry-endpoint", "producer", "manifest-only"] },
+        "generationId": { "type": "string" },
+        "authoritative": { "type": "boolean" },
+        "pilotOnly": { "type": "boolean" },
+        "successor": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "generationId": { "type": "string", "pattern": "^([0-9a-fA-F]{32})?$" },
+            "shardBits": { "type": "integer", "minimum": 0, "maximum": 12 },
+            "transitionEpoch": { "type": "integer", "minimum": 0 },
+            "sourceMode": { "type": "string", "enum": ["", "asm", "ssm"] }
+          }
+        },
+        "instanceId": { "type": "string" },
+        "scope": { "type": "string" },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "mcGroupId": { "type": "string" },
+        "iface": { "type": "string" },
+        "announceInterval": { "type": "string" },
+        "ttl": { "type": "string" },
+        "debug": { "type": "boolean" },
+        "logFormat": { "type": "string", "enum": ["text", "json"] },
+        "logLevel": { "type": "string", "enum": ["debug", "info", "warn", "error"] },
+        "traceSampling": { "type": "number", "minimum": 0, "maximum": 1 },
+        "sourceMode": { "type": "string", "enum": ["asm", "ssm"] },
+        "publishers": { "type": "array", "items": { "type": "string" } },
+        "publishersRefresh": { "type": "string" }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "path": { "type": "string" },
+        "addr": { "type": "string" },
+        "serviceMonitor": { "type": "object" }
+      }
+    },
+    "otlp": {
+      "type": "object",
+      "properties": {
+        "endpoint": { "type": "string" },
+        "interval": { "type": "string" }
+      }
+    },
+    "probes": { "type": "object" },
+    "service": { "type": "object" },
+    "resources": { "type": "object" },
+    "nodeSelector": { "type": "object" },
+    "tolerations": { "type": "array" },
+    "affinity": { "type": "object" },
+    "priorityClassName": { "type": "string" },
+    "topologySpreadConstraints": { "type": "array" },
+    "podDisruptionBudget": { "type": "object" },
+    "networkPolicy": { "type": "object" },
+    "extraEnv": { "type": "array" }
+  }
+}

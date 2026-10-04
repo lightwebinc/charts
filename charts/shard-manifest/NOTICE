@@ -1,0 +1,11 @@
+shard-manifest-helm
+Copyright 2026 Lightweb Inc. (https://lightweb.net)
+
+=========================================================================
+
+This Helm chart deploys `shard-manifest` — the BRC-139 Shard
+Manifest Announcement Daemon — into a Kubernetes cluster. It is the
+sibling deployment of `manifest-infra` (Ansible-based VM deployment).
+
+This product includes software developed at Lightweb Inc. and licensed
+under the Apache License, Version 2.0 (see LICENSE).
