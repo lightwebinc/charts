@@ -1,0 +1,5 @@
+owner: lightwebinc
+git-repo: subtx-generator-helm
+package-path: .cr-release-packages
+skip-existing: true
+sign: false

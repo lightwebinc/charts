@@ -1,0 +1,11 @@
+subtx-generator-helm
+Copyright 2026 Lightweb Inc. (https://lightweb.net)
+
+=========================================================================
+
+This repository contains the Helm chart for deploying the
+subtx-generator load and control-frame tooling on Kubernetes.
+The chart packages templates, default values, and CI workflows; the
+application source lives in the subtx-generator repository.
+
+=========================================================================

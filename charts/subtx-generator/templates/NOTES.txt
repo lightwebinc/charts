@@ -1,0 +1,17 @@
+{{ include "subtx-generator.fullname" . }} installed in namespace {{ .Release.Namespace }} as a {{ .Values.workloadType }}.
+
+Selected mode: {{ .Values.mode }}
+Target addr:   {{ .Values.args.addr }}
+
+Rendered CLI invocation:
+  /usr/local/bin/{{ .Values.mode }} \
+{{- include "subtx-generator.args" . | nindent 4 }}
+
+{{- if and (eq .Values.mode "subtx-gen") (not (kindIs "string" .Values.subtxGen.duration)) }}
+{{- else if and (eq .Values.mode "subtx-gen") (eq .Values.subtxGen.duration "0s") (eq .Values.workloadType "Job") }}
+
+NOTE: workloadType=Job with subtxGen.duration=0 will run until count is reached
+or until SIGINT. Set subtxGen.duration to a finite value for Job semantics.
+{{- end }}
+
+See https://github.com/lightwebinc/subtx-generator-helm for the full values reference.

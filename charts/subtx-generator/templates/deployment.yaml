@@ -1,0 +1,29 @@
+{{- if eq .Values.workloadType "Deployment" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "subtx-generator.fullname" . }}
+  labels:
+    {{- include "subtx-generator.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "subtx-generator.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- if eq .Values.networking.mode "multus" }}
+        {{- include "subtx-generator.multusAnnotation" . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "subtx-generator.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "subtx-generator.podSpec" . | nindent 6 }}
+{{- end }}

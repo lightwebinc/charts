@@ -1,0 +1,203 @@
+# Default values for subtx-generator.
+#
+# The application is a set of CLI tools (subtx-gen, send-anchor-frame,
+# send-block-announce, send-subtree-data, send-subtree-push, send-block-push).
+# The chart selects which binary to run via `mode` and translates the matching
+# args block into the container's command. Binaries are configured by flags;
+# the only env var they read is LOG_FORMAT (rendered from logFormat below).
+
+# Binary selector — choose one of:
+#   subtx-gen            traffic generator (BRC-124/128 frames)
+#   send-anchor-frame    BRC-134 anchor tx sender
+#   send-block-announce  BRC-131 block/coinbase announcements
+#   send-subtree-data    BRC-132 subtree data sender
+#   send-subtree-push    BRC-143 subtree push sender (image v0.2.10+)
+#   send-block-push      BRC-144 block push sender (image v0.2.10+)
+mode: "subtx-gen"
+
+# Deployment | Job
+#   Use Job for finite load runs that terminate on completion.
+#   Use Deployment for continuous generators (subtx-gen with duration=0).
+workloadType: "Deployment"
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/lightwebinc/subtx-generator
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations: {}
+podLabels: {}
+podSecurityContext: {}
+securityContext: {}
+
+# Pure UDP/TCP client — does not require fabric NIC access.
+# `pod` = default primary CNI; `host` = hostNetwork; `multus` available
+# if the operator wants the generator to bind a specific fabric NIC.
+networking:
+  mode: pod
+  multus:
+    networkName: mcast-fabric
+    namespace: bsv-mcast
+    fabricIPv6: ""
+    interface: net1
+  host:
+    dnsPolicy: ClusterFirstWithHostNet
+
+# Args shared by all binaries.
+# Empty string / 0 means "omit this flag" (binary default applies).
+args:
+  addr: "[::1]:8725"
+
+# Per-mode args. Only the block matching `.Values.mode` is rendered.
+# Each key maps directly to the binary's flag of the same kebab-case name.
+
+# subtx-gen — full traffic generator
+subtxGen:
+  # Submit over TCP — args.addr is then a TCP target (the standard 8725
+  # submission lane: a stream of BRC frames, no envelope) — instead of UDP,
+  # which the binary marks deprecated. false is the chart's previous behaviour,
+  # so upgrading this chart changes no existing install. mode: unicast only;
+  # the binary ignores it under direct-multicast.
+  tcp: false
+  frameVersion: 2
+  shardBits: 2
+  subtrees: 8
+  subtreeSeed: "subtx-generator-default"
+  pps: 1000
+  duration: "0s"   # 0 = continuous (Deployment default; binary default since v0.2.4). Set finite for Job runs.
+  count: 0
+  workers: 0
+  payloadSize: 512
+  # brc128 | brc124 | mixed — brc128 (BRC-30 EF) is the default: the fabric is
+  # EF-native, and every payload is exactly one valid tx of payloadSize bytes
+  # (min 75 for brc128/mixed, 60 for brc124; below-minimum fails at startup).
+  payloadFormat: "brc128"
+  seqStart: 1
+  seqGapEvery: 0
+  seqGapSize: 1
+  seqGapDelay: "0s"
+  logInterval: "1s"
+  printSubtrees: false
+  subtreeGroup: ""
+  announceAddr: ""
+  announceInterval: "10s"
+  announceTtl: 0
+  announcePhaseSize: 0
+  announcePhaseInterval: "0s"
+  corruptTxidRate: 0
+  # Direct-multicast mode (skips the proxy and emits directly). When set
+  # to "direct-multicast" the generator MUST be configured with
+  # bindSource (unique IPv6 per replica), egressIface, and a sourceMode/
+  # scope pair that resolves to the same prefix listeners join.
+  mode: "unicast"           # unicast | direct-multicast
+  bindSource: ""            # IPv6 literal; required when mode=direct-multicast
+  egressIface: ""           # outbound NIC for multicast egress (host or multus NIC name)
+  sourceMode: "ssm"         # asm | ssm
+  scope: "site"             # site | global
+  mcGroupId: "0x000B"
+  egressPort: 9001
+
+# send-anchor-frame — BRC-134 anchors
+sendAnchorFrame:
+  count: 10
+  payloadSize: 256
+  interval: "50ms"
+  tcp: false
+
+# send-block-announce — BRC-131 block + coinbase pairs
+sendBlockAnnounce:
+  # addr default for this binary is [::1]:9002 (proxy TCP). Override via args.addr.
+  blocks: 10
+  subtrees: 4
+  interval: "100ms"
+  coinbase: true
+
+# send-subtree-data — BRC-132 subtree data
+sendSubtreeData:
+  frames: 20
+  msgType: "hashes"         # hashes | full
+  nodes: 16
+  payloadSize: 0
+  subtreeCount: 0
+  interval: "50ms"
+
+# send-subtree-push — BRC-143 subtree push objects.
+# Targets the proxy's privileged subtree lane (-subtree-listen-port, standard
+# 8726), which must be enabled and reachable from this pod. Set args.addr.
+sendSubtreePush:
+  count: 10
+  interval: "100ms"
+  duration: "0s"
+  nodes: 16
+  coinbasePlaceholder: true  # first subtree of a block carries the 0xFF×32 leaf
+  seed: 0                    # string label for deterministic hashes; 0 = omit (binary default "subtree-push")
+  logHashes: false
+
+# send-block-push — BRC-144 block push objects.
+# Targets the proxy's privileged block lane (-block-listen-port, standard 8727).
+sendBlockPush:
+  count: 10
+  interval: "100ms"
+  duration: "0s"
+  subtrees: 4
+  coinbaseSize: 0
+  bumpSize: 0
+  heightStart: 0             # 0 = omit (binary default 800000)
+  seed: 0                    # string label for deterministic hashes; 0 = omit (binary default "block-push")
+  logHashes: false
+
+job:
+  completions: 1
+  parallelism: 1
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 600
+
+# Metrics: subtx-gen binaries do not currently expose an HTTP /metrics
+# endpoint. metrics.enabled is provided for parity / future use.
+service:
+  type: ClusterIP
+  metricsPort: 0
+
+metrics:
+  enabled: false
+  path: /metrics
+  port: 0
+
+probes:
+  readiness:
+    enabled: false
+  liveness:
+    enabled: false
+
+resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+priorityClassName: ""
+topologySpreadConstraints: []
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+networkPolicy:
+  enabled: false
+  ingressFrom: []
+
+# Unified logging output format for subtx-generator's structured logs.
+# text (stderr) | json (stdout, matching the rest of the fleet).
+# See https://github.com/lightwebinc/shard-common/blob/main/docs/logging.md
+logFormat: "text"
+
+extraEnv: []

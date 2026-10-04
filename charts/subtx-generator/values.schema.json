@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "subtx-generator values",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": ["subtx-gen", "send-anchor-frame", "send-block-announce", "send-subtree-data", "send-subtree-push", "send-block-push"]
+    },
+    "workloadType": { "type": "string", "enum": ["Deployment", "Job"] },
+    "logFormat": { "type": "string", "enum": ["text", "json"] },
+    "replicaCount": { "type": "integer", "minimum": 0 },
+    "image": {
+      "type": "object",
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "pullPolicy": { "type": "string", "enum": ["Always", "IfNotPresent", "Never"] }
+      }
+    },
+    "networking": {
+      "type": "object",
+      "properties": {
+        "mode": { "type": "string", "enum": ["pod", "host", "multus"] }
+      }
+    },
+    "subtxGen": {
+      "type": "object",
+      "properties": {
+        "tcp":           { "type": "boolean" },
+        "shardBits":     { "type": "integer", "minimum": 1, "maximum": 12 },
+        "frameVersion":  { "type": "integer", "minimum": 1, "maximum": 2 },
+        "payloadFormat": { "type": "string", "enum": ["brc124", "brc128", "mixed"] },
+        "corruptTxidRate": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "mode":          { "type": "string", "enum": ["unicast", "direct-multicast"] },
+        "bindSource":    { "type": "string" },
+        "egressIface":   { "type": "string" },
+        "sourceMode":    { "type": "string", "enum": ["asm", "ssm"] },
+        "scope":         { "type": "string", "enum": ["site", "global"] },
+        "mcGroupId":     { "type": "string" },
+        "egressPort":    { "type": "integer", "minimum": 1, "maximum": 65535 }
+      }
+    },
+    "sendSubtreeData": {
+      "type": "object",
+      "properties": {
+        "msgType": { "type": "string", "enum": ["hashes", "full"] }
+      }
+    },
+    "sendSubtreePush": {
+      "type": "object",
+      "properties": {
+        "nodes": { "type": "integer", "minimum": 1 },
+        "coinbasePlaceholder": { "type": "boolean" }
+      }
+    },
+    "sendBlockPush": {
+      "type": "object",
+      "properties": {
+        "subtrees": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}
