@@ -1,0 +1,7 @@
+metrics:
+  serviceMonitor:
+    enabled: true
+podDisruptionBudget:
+  enabled: true
+networkPolicy:
+  enabled: true

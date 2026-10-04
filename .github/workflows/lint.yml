@@ -1,134 +1,21 @@
 name: lint
 
 on:
+  # main only: a branch with a PR is covered by the pull_request run.
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
 
 concurrency:
-  group: lint-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
+  # Render scenarios: ci/*.yaml (+ .expect assertions), examples/*.yaml, and
+  # ci/reject/*.yaml for renders that must fail. See lightwebinc/ci helm-lint.
   lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
+    uses: lightwebinc/ci/.github/workflows/helm-lint.yml@e6098fcd1c4ecf7c0163e8599b4b3fb957562295 # main
 
-      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4
-        with:
-          version: v3.16.0
-
-      - name: helm lint (defaults)
-        run: helm lint .
-
-      - name: helm lint (strict)
-        run: helm lint . --strict
-
-      - name: helm template (defaults)
-        run: |
-          helm template release-test . --debug > /tmp/render-default.yaml
-          test -s /tmp/render-default.yaml
-
-      - name: helm template (sink mode — no cluster targets, no retrieval Service)
-        run: |
-          helm template release-test . \
-            --set config.mode=sink \
-            --debug > /tmp/render-sink.yaml
-          test -s /tmp/render-sink.yaml
-          ! grep -q 'retrieval' /tmp/render-sink.yaml
-          ! grep -q -- '-advertise' /tmp/render-sink.yaml
-          ! grep -q -- '-propagation' /tmp/render-sink.yaml
-
-      - name: helm template (servicemonitor + pdb + networkpolicy enabled)
-        run: |
-          helm template release-test . \
-            --set metrics.serviceMonitor.enabled=true \
-            --set podDisruptionBudget.enabled=true \
-            --set networkPolicy.enabled=true \
-            --debug > /tmp/render-full.yaml
-          test -s /tmp/render-full.yaml
-
-      - name: helm template (pod-attached tunnel, native and ordinary sidecar)
-        run: |
-          helm template release-test . \
-            --set tunnel.enabled=true \
-            --set tunnel.configSecret.name=bridge-wg \
-            --debug > /tmp/render-tunnel.yaml
-          grep -q 'restartPolicy: Always' /tmp/render-tunnel.yaml
-          grep -q 'type: Recreate' /tmp/render-tunnel.yaml
-          grep -q 'NET_ADMIN' /tmp/render-tunnel.yaml
-          helm template release-test . \
-            --set tunnel.enabled=true \
-            --set tunnel.configSecret.name=bridge-wg \
-            --set tunnel.nativeSidecar=false \
-            --kube-version 1.27.0 \
-            --debug > /tmp/render-tunnel-plain.yaml
-          ! grep -q 'initContainers' /tmp/render-tunnel-plain.yaml
-          grep -q 'name: wireguard' /tmp/render-tunnel-plain.yaml
-          # off by default: no sidecar, no volumes, no capability anywhere
-          ! grep -q 'wireguard\|NET_ADMIN' /tmp/render-default.yaml
-
-      - name: reject the tunnel under host networking, replicas, a missing Secret, an old cluster
-        run: |
-          base="--set tunnel.enabled=true --set tunnel.configSecret.name=bridge-wg"
-          if helm template release-test . $base --set networking.mode=host >/dev/null 2>&1; then
-            echo "expected the chart to reject tunnel.enabled with networking.mode=host"; exit 1
-          fi
-          if helm template release-test . $base --set replicaCount=2 >/dev/null 2>&1; then
-            echo "expected the chart to reject tunnel.enabled with replicaCount>1"; exit 1
-          fi
-          if helm template release-test . --set tunnel.enabled=true >/dev/null 2>&1; then
-            echo "expected the chart to reject tunnel.enabled without a configSecret"; exit 1
-          fi
-          if helm template release-test . $base --kube-version 1.28.0 >/dev/null 2>&1; then
-            echo "expected the chart to reject a native sidecar before Kubernetes 1.29"; exit 1
-          fi
-
-      - name: reject a doubled -advertise path
-        run: |
-          if helm template release-test . \
-              --set config.advertise=http://192.0.2.10:9145/api/v1 >/dev/null 2>&1; then
-            echo "expected the chart to reject advertise carrying apiPrefix"; exit 1
-          fi
-
-      - name: reject multiple reverse-path submitters
-        run: |
-          if helm template release-test . \
-              --set replicaCount=3 \
-              --set config.blockchain=192.0.2.10:20087 \
-              --set config.localAsset=http://192.0.2.10:20090/api/v1 \
-              --set config.edgeIngress=2001:db8:1::1 >/dev/null 2>&1; then
-            echo "expected the chart to reject replicaCount>1 with submitter=true"; exit 1
-          fi
-
-      - name: reject an empty peer id where announcements are configured
-        run: |
-          if helm template release-test . \
-              --set config.kafka[0]=192.0.2.10:19092 >/dev/null 2>&1; then
-            echo "expected the chart to reject an empty config.peerId with kafka set"; exit 1
-          fi
-
-      - name: reject a malformed peer id
-        run: |
-          if helm template release-test . \
-              --set config.kafka[0]=192.0.2.10:19092 \
-              --set config.peerId=not-a-peer-id >/dev/null 2>&1; then
-            echo "expected the chart to reject a malformed config.peerId"; exit 1
-          fi
-
-      # The examples leave peerId empty on purpose — it is per-instance and must
-      # never be copied between bridges — so drift rendering supplies one.
-      - name: helm template (examples — catch drift)
-        env:
-          PEER_ID: 12D3KooWLRPJAEfHqoBUmnBrDmDcnLnkV8mWMHhqPZbrVqQZBEBu
-        run: |
-          for f in examples/*.yaml; do
-            echo "::group::$f"
-            helm template release-test . -f "$f" \
-              --set config.peerId="$PEER_ID" --debug > "/tmp/render-$(basename "$f")"
-            test -s "/tmp/render-$(basename "$f")"
-            echo "::endgroup::"
-          done

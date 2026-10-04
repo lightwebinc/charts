@@ -1,0 +1,3 @@
++ restartPolicy: Always
++ type: Recreate
++ NET_ADMIN
