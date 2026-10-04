@@ -1,0 +1,11 @@
+networking:
+  mode: host
+metrics:
+  serviceMonitor:
+    enabled: true
+podDisruptionBudget:
+  enabled: true
+networkPolicy:
+  enabled: true
+autoscaling:
+  enabled: true
