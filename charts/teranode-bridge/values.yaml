@@ -116,7 +116,7 @@ tunnel:
   # wireguard-tools. Mirror it or replace it freely; nothing else is assumed.
   image:
     repository: docker.io/procustodibus/wireguard
-    tag: "v1.0.20260223-i260913"
+    tag: "v1.0.20260223-i260913@sha256:ff5e50f021907c4ca5dea7a00548f86ab767bfbd7b5a1658533176d96abb87c7"
     pullPolicy: IfNotPresent
 
   # The tunnel's wg-quick configuration, exactly as downloaded when the delivery
