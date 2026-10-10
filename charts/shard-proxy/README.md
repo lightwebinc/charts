@@ -31,7 +31,7 @@ helm install proxy . -n bsv-mcast --create-namespace \
 | `host` | `hostNetwork: true`; `MULTICAST_IF` resolves to the host NIC named by `config.multicastIf`. Single-NIC fallback. |
 | `unicast` | Reserved for a future proxy `EGRESS_MODE=unicast-list` release. The chart renders pods but emits a `helm.sh/chart-warnings` annotation. |
 
-To run the full pipeline, compose this chart with the [shard-listener](https://github.com/lightwebinc/shard-listener-helm) and [retry-endpoint](https://github.com/lightwebinc/retry-endpoint-helm) charts — they are independent releases wired together by multicast group/port configuration, and work with Helmfile, ArgoCD, or plain Helm.
+To run the full pipeline, compose this chart with the [shard-listener](../shard-listener) and [retry-endpoint](../retry-endpoint) charts — they are independent releases wired together by multicast group/port configuration, and work with Helmfile, ArgoCD, or plain Helm.
 
 ### BGP-anycast ingress (host mode)
 

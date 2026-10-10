@@ -132,7 +132,7 @@ transaction as `TX_MISSING_PARENT`, which Arcade already retries.
 
 `config.kafka` and `config.edgeIngress` are YAML **lists** in values but render as **single
 comma-joined flags** (`-kafka=a,b`, `-edge-ingress=a,b`): the binary splits on comma itself. This
-differs from teranode-bridge-helm, whose binary takes repeated flags.
+differs from the teranode-bridge chart, whose binary takes repeated flags.
 
 ## Scaling: why `replicaCount` stays 1
 

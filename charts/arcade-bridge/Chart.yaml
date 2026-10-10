@@ -2,12 +2,12 @@ apiVersion: v2
 name: arcade-bridge
 description: Landing-tier bridge for pushed delivery into an unmodified Arcade v2 + merkle-service stack. Terminates the subtree/block delivery lanes, announces and serves merkle-service's fetches locally, and optionally fronts Arcade's broadcast path with a facade that forwards one extended-format stream up the tunnel
 type: application
-version: 0.1.1
+version: 0.1.2
 # appVersion MUST equal a tag published on ghcr.io/lightwebinc/arcade-bridge
 # (the chart's tag:"" default pulls this). Images are published manually via the
 # binary repo's image-publish.yml workflow; bump appVersion ONLY in lockstep with
 # an image publish — binary git tags are NOT image tags until published.
-appVersion: "0.1.0"
+appVersion: "0.1.2"
 kubeVersion: ">= 1.27.0-0"
 keywords:
   - bitcoin
@@ -27,6 +27,8 @@ icon: https://raw.githubusercontent.com/lightwebinc/bsv-multicast/main/.assets/i
 annotations:
   artifacthub.io/license: Apache-2.0
   artifacthub.io/changes: |
+    - kind: changed
+      description: appVersion 0.1.2; values config.announceQueue and config.announceWorkers map -announce-queue and -announce-workers
     - kind: fixed
       description: an object whose merkle-service announce FAILED is now re-announced on its next redelivery instead of being suppressed as a duplicate forever; the cached bytes are kept either way so the retrieval plane can still serve a pull
     - kind: changed

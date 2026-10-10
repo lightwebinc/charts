@@ -2,12 +2,12 @@ apiVersion: v2
 name: retry-endpoint
 description: BSV multicast retry endpoint — caches frames and retransmits on NACK
 type: application
-version: 0.5.4
+version: 0.5.5
 # appVersion MUST equal a tag published on ghcr.io/lightwebinc/retry-endpoint
 # (the chart's tag:"" default pulls this). Images are published manually via the
 # binary repo's image-publish.yml workflow; bump appVersion ONLY in lockstep with
 # an image publish — binary git tags (v1.4.x) are NOT image tags until published.
-appVersion: "1.10.1"
+appVersion: "1.12.0"
 kubeVersion: ">= 1.27.0-0"
 keywords:
   - bitcoin
@@ -27,6 +27,8 @@ icon: https://raw.githubusercontent.com/lightwebinc/bsv-multicast/main/.assets/i
 annotations:
   artifacthub.io/license: Apache-2.0
   artifacthub.io/changes: |
+    - kind: changed
+      description: appVersion 1.12.0; the previously published chart ran 1.9.2, below the 1.9.5 repair-storm floor
     - kind: changed
       description: appVersion 1.9.1 — first image published since 1.6.0; the default image honours the BEEF plane envs (>= 1.7.0), binds the proxy fetch socket to the fabric source, and rejects beacon-tier 255 at config load
     - kind: fixed
