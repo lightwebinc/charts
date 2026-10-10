@@ -63,7 +63,7 @@ through the facade only.
 ```bash
 # OCI registry: minimum viable feed (proof ingest through the fabric)
 helm install bridge oci://ghcr.io/lightwebinc/charts/arcade-bridge \
-  --version 0.1.1 -n bsv-mcast --create-namespace \
+  --version 0.1.2 -n bsv-mcast --create-namespace \
   --set config.advertise=http://192.0.2.10:9165 \
   --set config.kafka[0]=192.0.2.10:19092
 

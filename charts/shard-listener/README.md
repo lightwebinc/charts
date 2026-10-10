@@ -13,7 +13,7 @@ This repository packages templates, default values, JSON Schema validation, and 
 ```bash
 # DaemonSet over a labeled set of fabric nodes (recommended)
 helm install listener oci://ghcr.io/lightwebinc/charts/shard-listener \
-  --version 0.7.5 -n bsv-mcast --create-namespace \
+  --version 0.8.1 -n bsv-mcast --create-namespace \
   --set workloadType=DaemonSet \
   --set 'nodeSelector.bsv-mcast/role=listener' \
   --set config.retryEndpoints='[2001:db8::24]:9300\,[2001:db8::25]:9300\,[2001:db8::26]:9300'
