@@ -13,7 +13,7 @@ This repository packages templates, default values, JSON Schema validation, and 
 ```bash
 # OCI registry (SSM default — bindSource is the pod's fabric IPv6, unique per replica)
 helm install proxy oci://ghcr.io/lightwebinc/charts/shard-proxy \
-  --version 0.7.4 -n bsv-mcast --create-namespace \
+  --version 0.7.8 -n bsv-mcast --create-namespace \
   --set networking.multus.fabricIPv6=fd20::21/64 \
   --set config.bindSource=fd20::21
 
@@ -31,7 +31,7 @@ helm install proxy . -n bsv-mcast --create-namespace \
 | `host` | `hostNetwork: true`; `MULTICAST_IF` resolves to the host NIC named by `config.multicastIf`. Single-NIC fallback. |
 | `unicast` | Reserved for a future proxy `EGRESS_MODE=unicast-list` release. The chart renders pods but emits a `helm.sh/chart-warnings` annotation. |
 
-To run the full pipeline, compose this chart with the [shard-listener](https://github.com/lightwebinc/shard-listener-helm) and [retry-endpoint](https://github.com/lightwebinc/retry-endpoint-helm) charts — they are independent releases wired together by multicast group/port configuration, and work with Helmfile, ArgoCD, or plain Helm.
+To run the full pipeline, compose this chart with the [shard-listener](../shard-listener) and [retry-endpoint](../retry-endpoint) charts — they are independent releases wired together by multicast group/port configuration, and work with Helmfile, ArgoCD, or plain Helm.
 
 ### BGP-anycast ingress (host mode)
 

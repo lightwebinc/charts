@@ -138,7 +138,7 @@ config:
   # ── Announcing to merkle-service ───────────────────────────────────────────
   # -kafka: merkle-service's Kafka bootstrap. REQUIRED unless mode=sink.
   # A YAML list here; the chart joins it with commas into the single -kafka
-  # flag the binary splits (this differs from teranode-bridge-helm, whose
+  # flag the binary splits (this differs from the teranode-bridge chart, whose
   # binary takes repeated flags). The brokers must advertise a listener that
   # resolves FROM THIS POD: a mis-advertised external listener passes the
   # startup ping and then fails at produce time.
@@ -158,6 +158,8 @@ config:
   # when running several.
   peerId: "arcade-bridge"
   clientName: "arcade-bridge" # -client-name  clientName stamped on announcements
+  announceQueue: 4096         # -announce-queue  pending announcements held off the lane read loop
+  announceWorkers: 4          # -announce-workers  workers draining the announce queue
 
   # ── Facade and up-tunnel (Arcade's broadcast path) ─────────────────────────
   # The facade serves the Teranode-shaped POST /txs surface Arcade's propagation

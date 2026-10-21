@@ -37,7 +37,7 @@ No ConfigMap: there is nothing to mount — the flags are the entire configurati
 ```bash
 # OCI registry — minimum viable delivery-only bridge
 helm install bridge oci://ghcr.io/lightwebinc/charts/teranode-bridge \
-  --version 0.7.0 -n bsv-mcast --create-namespace \
+  --version 0.9.0 -n bsv-mcast --create-namespace \
   --set config.advertise=http://[2001:db8:3f::1]:9145 \
   --set config.propagation[0]=http://192.0.2.10:20833 \
   --set config.kafka[0]=192.0.2.10:19092 \

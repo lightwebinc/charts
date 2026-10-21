@@ -164,6 +164,8 @@ lists for `--set config.kafka[0]=...` ergonomics and joins here.
 {{- include "arcade-bridge.flag" (dict "name" "block-topic" "v" $c.blockTopic) -}}
 {{- include "arcade-bridge.flag" (dict "name" "peer-id" "v" $c.peerId) -}}
 {{- include "arcade-bridge.flag" (dict "name" "client-name" "v" $c.clientName) -}}
+{{- include "arcade-bridge.flag" (dict "name" "announce-queue" "v" $c.announceQueue) -}}
+{{- include "arcade-bridge.flag" (dict "name" "announce-workers" "v" $c.announceWorkers) -}}
 {{- end -}}
 {{- /* Facade: only when it actually starts (edgeIngress set, mode != sink) so
        the arg vector never suggests a listener the process does not open. */ -}}

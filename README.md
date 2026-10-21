@@ -34,6 +34,8 @@ Bump the chart's `version` (and `appVersion`, which must name a published
 image) in `Chart.yaml`, then run the `release` workflow with the chart name and
 `RELEASE` as the confirmation. `dry-run` packages without pushing.
 
+Releases and notes live on [GitHub Releases](https://github.com/lightwebinc/charts/releases); there is no CHANGELOG.
+
 ## License
 
 Apache 2.0, see [LICENSE](LICENSE).
