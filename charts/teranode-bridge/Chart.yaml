@@ -29,7 +29,7 @@ annotations:
   artifacthub.io/license: Apache-2.0
   artifacthub.io/changes: |
     - kind: changed
-      description: appVersion 0.12.1: metrics.legacyPrefix defaults false; set true for a dashboard still on btb_ names
+      description: appVersion 0.12.2: metrics.legacyPrefix defaults false; set true for a dashboard still on btb_ names
     - kind: changed
       description: appVersion 0.10.1 (re-announce after a failed announce, Kafka observability split)
     - kind: added
