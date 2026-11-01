@@ -250,7 +250,7 @@ describe pod` readable and keeps `--set` free of comma escaping.
        chart's, or are a migration switch an operator must be able to see in
        `kubectl describe pod`, so every one is rendered explicitly. */ -}}
 {{- if .Values.metrics.enabled }}
-{{- $legacy := true -}}
+{{- $legacy := false -}}
 {{- if kindIs "bool" .Values.metrics.legacyPrefix }}{{ $legacy = .Values.metrics.legacyPrefix }}{{ end }}
 - {{ printf "-metrics-legacy-prefix=%v" $legacy | quote }}
 {{- $txHist := false -}}

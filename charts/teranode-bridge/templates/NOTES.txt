@@ -99,7 +99,7 @@ immediately after a restart.
 {{- end }}
 {{- if .Values.metrics.legacyPrefix }}
 Series are ALSO emitted under the old btb_ prefix (metrics.legacyPrefix=true) so
-existing dashboards keep working. Set it false once they are migrated.
+dashboards on the old names keep working.
 {{- end }}
 {{- if not .Values.metrics.prometheusRule.enabled }}
 No alert rules installed. Set metrics.prometheusRule.enabled=true (needs the

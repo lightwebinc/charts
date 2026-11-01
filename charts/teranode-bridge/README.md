@@ -163,7 +163,7 @@ Series are `teranode_bridge_*`, on the same `Namespace`/`Subsystem` grid as ever
 
 | Value | Effect |
 | --- | --- |
-| `metrics.legacyPrefix: true` (default) | Also emits every pre-existing series under its old `btb_` name, so dashboards written before the rename keep working. Set `false` once migrated. |
+| `metrics.legacyPrefix: false` (default) | `true` also emits every pre-existing series under its old `btb_` name, for a dashboard still on the old names. |
 | `metrics.prometheusRule.enabled: true` | Installs the alert rules, including the submitter-role invariant — `sum(teranode_bridge_submitter_active)` must equal exactly **1** per cluster per class. Set `metrics.prometheusRule.clusterSelectorLabel` to whatever label identifies one cluster's bridges, or a fleet-wide sum reports every extra cluster as a double-submitter. |
 | `health.strict: true` | Fails readiness when **any** dependency is down (Teranode's `CheckAll` semantics). Off by default: the retrieval plane serves from a local cache, so a bridge with unreachable Kafka still answers pulls for what it already announced — and Kafka is shared, so gating on it would remove every bridge from the retrieval Service at once. |
 | `tracing.enabled: true` | OTLP/HTTP export. Point `tracing.collectorUrl` at the **same** collector the cluster uses. |

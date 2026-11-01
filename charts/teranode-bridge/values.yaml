@@ -488,11 +488,10 @@ metrics:
 
   # Series are teranode_bridge_* — the Namespace/Subsystem pair that names every
   # Teranode metric, so a bridge lands on the same grid as the cluster it fronts.
-  # true ALSO emits every pre-existing series under its old btb_ name, so
-  # dashboards written before the rename keep working through the cutover. Set
-  # false once they are migrated; the alias is scheduled for removal in the
-  # release after next. Metrics introduced with the new naming are never aliased.
-  legacyPrefix: true
+  # true ALSO emits every pre-existing series under its old btb_ name, for a
+  # dashboard still on the old names. Metrics introduced with the new naming are
+  # never aliased.
+  legacyPrefix: false
 
   # Per-object size histogram on the TX lane. Off by default: the lane bytes
   # counter already gives the mean, and at megatransaction-per-second rates a
