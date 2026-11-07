@@ -101,7 +101,7 @@ enables control-plane traces. See the
 The user ingress ports (`config.udpListenPort` 8725 / `config.tcpListenPort`)
 are transaction-only: privileged BRC-131/133/132 frames are dropped there
 (counted as `bsp_privileged_frame_rejected_total`). The former miner multicast
-port was **deprecated 2026-07-07**. Blocks and subtrees now enter as
+port is deprecated. Blocks and subtrees now enter as
 header-stripped **BRC-144 block** / **BRC-143 subtree** push frames on dedicated
 TCP ports: `config.blockListenPort` (standard 8727) / `config.subtreeListenPort`
 (standard 8726): which the proxy reframes into the fabric internally

@@ -104,7 +104,7 @@ helm -n bridge install bridge-shard0 oci://ghcr.io/lightwebinc/charts/teranode-b
 kubectl -n bridge exec deploy/bridge-shard0-teranode-bridge -c wireguard -- wg show wg0
 ```
 
-**Maturity.** This shape is new in chart 0.8.0. It has been exercised against a stand-in WireGuard peer under exactly the security context the chart renders (handshake, lanes dialled back into an unprivileged container in the shared namespace, clean restart and shutdown), but not yet on a production cluster or through a pod reschedule against a live delivery slot. Drill a reschedule before you rely on it. The landing-tier shapes above are the proven ones.
+**Maturity.** This shape has been exercised against a stand-in WireGuard peer under exactly the security context the chart renders (handshake, lanes dialed back into an unprivileged container in the shared namespace, clean restart and shutdown), but not through a pod reschedule against a live delivery slot. Drill a reschedule before you rely on it. The landing-tier shapes above are the proven ones.
 
 What to know before enabling it:
 
