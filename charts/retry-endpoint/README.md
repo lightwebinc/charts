@@ -12,7 +12,7 @@ This repository packages templates, default values, JSON Schema validation, and 
 
 ```bash
 helm install retry-node-1 oci://ghcr.io/lightwebinc/charts/retry-endpoint \
-  --version 0.5.6 -n bsv-mcast --create-namespace \
+  --version 0.5.7 -n bsv-mcast --create-namespace \
   --set config.nackAddr=2001:db8::24 \
   --set 'nodeSelector.bsv-mcast/node=retry-1'
 ```
