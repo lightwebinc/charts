@@ -32,7 +32,7 @@ annotations:
     - kind: changed
       description: appVersion 1.12.0; the previously published chart ran 1.9.2, below the 1.9.5 repair-storm floor
     - kind: changed
-      description: appVersion 1.9.1 — first image published since 1.6.0; the default image honours the BEEF plane envs (>= 1.7.0), binds the proxy fetch socket to the fabric source, and rejects beacon-tier 255 at config load
+      description: appVersion 1.9.1, first image published since 1.6.0; the default image honours the BEEF plane envs (>= 1.7.0), binds the proxy fetch socket to the fabric source, and rejects beacon-tier 255 at config load
     - kind: fixed
       description: values.schema.json caps config.beaconTier at 254 (255 is the reserved static-seed sentinel)
     - kind: added
@@ -54,6 +54,6 @@ annotations:
     - kind: fixed
       description: BEEF_SHARD_BITS no longer widens an explicit 0 to 4 (Go-template default treats 0 as empty)
     - kind: removed
-      description: config.beefMaxObjectBytes (dead key — retry-endpoint caches fragments opaquely and takes no object bound)
+      description: config.beefMaxObjectBytes (dead key, retry-endpoint caches fragments opaquely and takes no object bound)
     - kind: changed
-      description: appVersion 1.10.1 — first image published since 1.9.2; the default image adds the tee ingest + join gate, cadence re-assertion of multicast joins, per-requester dedup on unicast recovery, retransmit-mode-aware proxy recovery, and FreeBSD co-bind (SO_REUSEPORT). Built with Go 1.27.1.
+      description: appVersion 1.10.1, first image published since 1.9.2; the default image adds the tee ingest + join gate, cadence re-assertion of multicast joins, per-requester dedup on unicast recovery, retransmit-mode-aware proxy recovery, and FreeBSD co-bind (SO_REUSEPORT). Built with Go 1.27.1.

@@ -34,11 +34,11 @@ annotations:
     - kind: changed
       description: appVersion 1.29.1
     - kind: changed
-      description: appVersion 1.27.0 — first image published since 1.24.1; the default image derives control-plane groups from the source mode, strips subtree egress to a BRC-143 object and block egress to a BRC-144 object, adds BEEF filter observation and gap-abandon reasons, and counts fragments dropped over the reassembly bound (bsl_reassembly_oversize_fragments_total). Built with Go 1.27.1.
+      description: appVersion 1.27.0, first image published since 1.24.1; the default image derives control-plane groups from the source mode, strips subtree egress to a BRC-143 object and block egress to a BRC-144 object, adds BEEF filter observation and gap-abandon reasons, and counts fragments dropped over the reassembly bound (bsl_reassembly_oversize_fragments_total). Built with Go 1.27.1.
     - kind: fixed
-      description: appVersion 1.22.1 — a late NACK repair no longer reads as a proxy restart (which flushed pending gaps to unrecovered, re-baselined the flow and NACKed already-received frames), and NACK datagrams that fail to send are now visible as bsl_nack_send_errors_total{endpoint} instead of looking like a timeout
+      description: appVersion 1.22.1, a late NACK repair no longer reads as a proxy restart (which flushed pending gaps to unrecovered, re-baselined the flow and NACKed already-received frames), and NACK datagrams that fail to send are now visible as bsl_nack_send_errors_total{endpoint} instead of looking like a timeout
     - kind: changed
-      description: appVersion 1.21.0 — first image published since 1.8.0; the default image now honours the BEEF_* envs (>= 1.10.0/1.12.0), block-PoW default-on (>= 1.16.0), the NACK tail-probe family (>= 1.15.0) and -rebucket-relay (>= 1.10.1)
+      description: appVersion 1.21.0, first image published since 1.8.0; the default image now honours the BEEF_* envs (>= 1.10.0/1.12.0), block-PoW default-on (>= 1.16.0), the NACK tail-probe family (>= 1.15.0) and -rebucket-relay (>= 1.10.1)
     - kind: changed
       description: values/README annotate the minimum image each feature family needs when image.tag pins older than appVersion
     - kind: added
@@ -48,7 +48,7 @@ annotations:
     - kind: added
       description: config.localSource (own-source SSM join loop guard for collapsed nodes)
     - kind: added
-      description: config.mode (P3b role split — collapsed|receiver|delivery); appVersion 1.6.9
+      description: config.mode (P3b role split, collapsed|receiver|delivery); appVersion 1.6.9
     - kind: added
       description: config.deliveryAddrs (receiver-mode delivery fan-out target set)
     - kind: changed
@@ -68,4 +68,4 @@ annotations:
     - kind: fixed
       description: EGRESS_DEDUP_LOCAL_CAP / INGRESS_SET_LOCAL_CAP render as integers, not scientific notation
     - kind: changed
-      description: appVersion 1.24.1 — the default image adds the retry-tee receive mirror and aligns payload verification with the proxy (shard-common v0.19.4, BSD netjoin). Built with Go 1.27.1.
+      description: appVersion 1.24.1, the default image adds the retry-tee receive mirror and aligns payload verification with the proxy (shard-common v0.19.4, BSD netjoin). Built with Go 1.27.1.

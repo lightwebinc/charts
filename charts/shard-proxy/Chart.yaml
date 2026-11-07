@@ -53,10 +53,10 @@ annotations:
     - kind: fixed
       description: BEEF_MAX_OBJECT_BYTES / TXID_DEDUP_LOCAL_CAP render as integers, not scientific notation (values-file overrides were silently discarded)
     - kind: fixed
-      description: networkPolicy push-ingress rule now fails the render when a push port is set and pushIngressFrom is empty — an empty `from` matches ALL sources, so the old render was world-open, not fail-closed
+      description: networkPolicy push-ingress rule now fails the render when a push port is set and pushIngressFrom is empty, an empty `from` matches ALL sources, so the old render was world-open, not fail-closed
     - kind: changed
-      description: appVersion 1.30.0 — first image published since 1.14.0; the default image now honours the push-frame ingest ports (>= v1.15.0), the BEEF_* envs (>= v1.20.0), block-PoW default-on (>= v1.25.0), and fragmentation-on-by-default (frag-mtu 1500)
+      description: appVersion 1.30.0, first image published since 1.14.0; the default image now honours the push-frame ingest ports (>= v1.15.0), the BEEF_* envs (>= v1.20.0), block-PoW default-on (>= v1.25.0), and fragmentation-on-by-default (frag-mtu 1500)
     - kind: changed
-      description: appVersion 1.34.1 — first image published since 1.30.1; the default image adds the payload-hash and stamped-ingress gates, the per-connection admit hook on the TCP and object lanes, and the batched-egress whole-batch drain fix. Built with Go 1.27.1.
+      description: appVersion 1.34.1, first image published since 1.30.1; the default image adds the payload-hash and stamped-ingress gates, the per-connection admit hook on the TCP and object lanes, and the batched-egress whole-batch drain fix. Built with Go 1.27.1.
     - kind: changed
-      description: appVersion 1.38.1 — first image published since 1.34.1; the default image adds BEEF ingress rate limiting (per source and per plane), a separate BEEF dedup store, topic/marker/ContentID checks on pre-framed BEEF, control-plane groups derived from the source mode, stamped control-group frames teed to the retry cache, and BEEF record reads bounded at the submitter's object bound (a record far over the bound closes the connection instead of being buffered). Built with Go 1.27.1.
+      description: appVersion 1.38.1, first image published since 1.34.1; the default image adds BEEF ingress rate limiting (per source and per plane), a separate BEEF dedup store, topic/marker/ContentID checks on pre-framed BEEF, control-plane groups derived from the source mode, stamped control-group frames teed to the retry cache, and BEEF record reads bounded at the submitter's object bound (a record far over the bound closes the connection instead of being buffered). Built with Go 1.27.1.

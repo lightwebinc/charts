@@ -29,12 +29,12 @@ annotations:
     - kind: changed
       description: appVersion 0.4.3
     - kind: changed
-      description: appVersion 0.4.0 — first image published since 0.2.4; the default image parses DOMAINS (>= 0.3.0), defaults shard-bits to 2, and carries the grpc/x/net security bumps
+      description: appVersion 0.4.0, first image published since 0.2.4; the default image parses DOMAINS (>= 0.3.0), defaults shard-bits to 2, and carries the grpc/x/net security bumps
     - kind: added
       description: manifest.domains (BRC-148 per-domain plane descriptors → DOMAINS env; requires image.tag >= 0.3.0)
     - kind: added
-      description: manifest.pilotOnly (Flags.PilotOnly — listener auto-join unions groups from pilot manifests only)
+      description: manifest.pilotOnly (Flags.PilotOnly, listener auto-join unions groups from pilot manifests only)
     - kind: added
       description: manifest.successor.* (BRC-139 Successor block for a re-shard generation transition)
     - kind: changed
-      description: appVersion 0.4.2 — dependency and CI maintenance only, no manifest behaviour change. Built with Go 1.27.1.
+      description: appVersion 0.4.2, dependency and CI maintenance only, no manifest behaviour change. Built with Go 1.27.1.

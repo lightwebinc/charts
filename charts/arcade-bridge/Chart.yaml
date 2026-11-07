@@ -34,10 +34,10 @@ annotations:
     - kind: fixed
       description: an object whose merkle-service announce FAILED is now re-announced on its next redelivery instead of being suppressed as a duplicate forever; the cached bytes are kept either way so the retrieval plane can still serve a pull
     - kind: changed
-      description: alert ArcadeBridgeLaneRejects is replaced by ArcadeBridgeLaneDropped over the new arcade_bridge_lane_connections_dropped_total — no arcade-bridge lane enforces a format policy, so the rejects rule could never fire, while a malformed stream had no series at all and showed up only in the log
+      description: alert ArcadeBridgeLaneRejects is replaced by ArcadeBridgeLaneDropped over the new arcade_bridge_lane_connections_dropped_total, no arcade-bridge lane enforces a format policy, so the rejects rule could never fire, while a malformed stream had no series at all and showed up only in the log
     - kind: added
       description: metric arcade_bridge_lane_connections_dropped_total{lane} counts connections dropped on a framing fault, for parity with teranode_bridge_lane_connections_dropped_total
     - kind: changed
-      description: wording — the component is described as a landing-tier bridge throughout; no template or value changes
+      description: wording, the component is described as a landing-tier bridge throughout; no template or value changes
     - kind: added
-      description: Initial release — delivery lanes, retrieval plane, merkle-service announce, optional propagation facade with edge-ingress failover, ServiceMonitor/PrometheusRule, pod and host networking
+      description: Initial release, delivery lanes, retrieval plane, merkle-service announce, optional propagation facade with edge-ingress failover, ServiceMonitor/PrometheusRule, pod and host networking

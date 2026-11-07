@@ -35,12 +35,12 @@ annotations:
     - kind: changed
       description: appVersion 0.4.1
     - kind: changed
-      description: appVersion 0.3.4 — first image published since 0.2.6; the default image packages all seven binaries, including the send-subtree-push / send-block-push modes and tunnel-sink
+      description: appVersion 0.3.4, first image published since 0.2.6; the default image packages all seven binaries, including the send-subtree-push / send-block-push modes and tunnel-sink
     - kind: changed
-      description: subtxGen.payloadFormat default brc128 (BRC-30 EF) — the fabric is EF-native; pin brc124 explicitly for raw-tx lanes
+      description: subtxGen.payloadFormat default brc128 (BRC-30 EF), the fabric is EF-native; pin brc124 explicitly for raw-tx lanes
     - kind: added
-      description: send-subtree-push / send-block-push modes (BRC-143/144 push lanes) — require image.tag set to an image built from v0.2.10+; the default appVersion image does not contain these binaries
+      description: send-subtree-push / send-block-push modes (BRC-143/144 push lanes), require image.tag set to an image built from v0.2.10+; the default appVersion image does not contain these binaries
     - kind: fixed
       description: command path is /usr/local/bin/<mode>; the previous /<mode> did not exist in the image
     - kind: changed
-      description: appVersion 0.3.6 — dependency and CI maintenance only, no generator behaviour change. Built with Go 1.27.1.
+      description: appVersion 0.3.6, dependency and CI maintenance only, no generator behaviour change. Built with Go 1.27.1.
