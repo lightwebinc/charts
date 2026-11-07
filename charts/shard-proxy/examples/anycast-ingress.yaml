@@ -3,10 +3,10 @@
 #   helm install sp . -f examples/anycast-ingress.yaml
 #
 # The proxy runs as a hostNetwork pod on a tainted data-plane worker and binds
-# the node's addresses ([::] covers the anycast VIP, which the HOST owns — your
+# the node's addresses ([::] covers the anycast VIP, which the HOST owns: your
 # host tooling puts the VIP on `lo`, a BGP speaker (FRR/BIRD) announces it, and
 # a health check enables/withdraws the route). The chart does NOT manage the
-# VIP or run BGP — those are host-level so k8s never touches the hot path.
+# VIP or run BGP: those are host-level so k8s never touches the hot path.
 #
 # Graceful drain: point the host speaker's health check at `/readyz`. On
 # SIGTERM the proxy drains for `config.drainTimeout` while /readyz reports
@@ -22,10 +22,10 @@ networking:
 config:
   listenAddr: "[::]"               # receives on the anycast VIP and any host addr
   udpListenPort: 8725
-  metricsAddr: ":9100"             # /healthz + /readyz served here — what the speaker probes
+  metricsAddr: ":9100"             # /healthz + /readyz served here: what the speaker probes
   drainTimeout: "15s"              # drain window; speaker (on /readyz) withdraws at drain start
   # SSM default: the EGRESS source must be a distinct (non-anycast) IPv6 per
-  # node — anycast/ECMP-shared sources break PIM-SSM RPF. Doc-safe placeholder;
+  # node: anycast/ECMP-shared sources break PIM-SSM RPF. Doc-safe placeholder;
   # set per release.
   bindSource: "2001:db8::1"
 

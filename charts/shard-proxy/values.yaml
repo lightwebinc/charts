@@ -1,13 +1,13 @@
 # Default values for shard-proxy.
 # Most binary flags are exposed under .config; advanced ones empty/disabled by
-# default. extraEnv-only (not modelled here): REQUIRE_EF, ALLOW_STAMPED_INGRESS,
+# default. extraEnv-only (not modeled here): REQUIRE_EF, ALLOW_STAMPED_INGRESS,
 # VERIFY_PAYLOAD_HASH, VERIFY_SUBTREE_ROOT, BSP_RECV_BATCH, BSP_RETRY_TEE,
-# BSP_RECV_BUF_BYTES, BSP_PPROF, INGRESS_DEDUP (all read by the default
+# BSP_RECV_BUF_BYTES, BSP_PPROF, INGRESS_DEDUP, CONTROL_GROUP_COMPAT (all read by the default
 # appVersion image; VERIFY_SUBTREE_ROOT needs image >= 1.39.0 and the
 # stamped-ingress / payload-hash pair needs image >= 1.34.1).
 
 # HA NOTE: the proxy is the ingress datapath. replicaCount=1 is a single point of
-# failure — a pod restart drops ingress until it is rescheduled. The proxy holds no
+# failure: a pod restart drops ingress until it is rescheduled. The proxy holds no
 # shared replicated state, so HA is achieved at the network layer, not by raising
 # replicaCount blindly: front replicas with external BGP/ECMP anycast (or a per-pod
 # fabric IPv6, see networking below) so traffic fails over. Raising replicaCount
@@ -23,9 +23,9 @@ image:
   repository: ghcr.io/lightwebinc/shard-proxy
   # IfNotPresent is correct for the default immutable tag below. FOOTGUN: if you
   # override tag with a MUTABLE tag (e.g. "latest" / "main"), a rescheduled pod keeps
-  # the stale cached image — set pullPolicy: Always whenever you use a mutable tag.
+  # the stale cached image: set pullPolicy: Always whenever you use a mutable tag.
   pullPolicy: IfNotPresent
-  # Defaults to .Chart.AppVersion when empty — appVersion must equal a PUBLISHED
+  # Defaults to .Chart.AppVersion when empty: appVersion must equal a PUBLISHED
   # ghcr image tag (see the contract note in Chart.yaml), or `tag: ""` fails to pull.
   tag: ""
 
@@ -57,9 +57,9 @@ securityContext:
     add: ["NET_ADMIN"]
 
 # Networking mode:
-#   multus  — primary CNI for control/metrics + macvlan secondary on fabric NIC (default)
-#   host    — hostNetwork: true; single-NIC fallback
-#   unicast — primary CNI only; pure unicast egress (proxy unicast mode is not yet implemented;
+#   multus: primary CNI for control/metrics + macvlan secondary on fabric NIC (default)
+#   host: hostNetwork: true; single-NIC fallback
+#   unicast: primary CNI only; pure unicast egress (proxy unicast mode is not yet implemented;
 #             chart emits a warning annotation)
 networking:
   mode: multus
@@ -84,13 +84,13 @@ config:
   # enter as header-stripped BRC-144 / BRC-143 PUSH frames on dedicated TCP
   # ports, reframed to the fabric internally (subtree → BRC-132, block → BRC-131
   # carrying the BRC-144 body verbatim). These ports are privileged: bind them
-  # tunnel-side and restrict via networkPolicy.pushIngressFrom / firewall — only
+  # tunnel-side and restrict via networkPolicy.pushIngressFrom / firewall: only
   # 8725 is public. Standard numbers: 8726 subtree, 8727 block. 0 = disabled.
   # Requires image >= v1.15.0 (the default appVersion satisfies this); older
   # pins ignore SUBTREE_LISTEN_PORT / BLOCK_LISTEN_PORT (miner-port flags era).
   # See bsv-multicast/DESIGN.md §Ingress Authorization (miner-tier gate).
-  subtreeListenPort: 0   # SUBTREE_LISTEN_PORT — TCP BRC-143 subtree push ingest (standard 8726); 0 = disabled
-  blockListenPort: 0     # BLOCK_LISTEN_PORT — TCP BRC-144 block push ingest (standard 8727); 0 = disabled
+  subtreeListenPort: 0   # SUBTREE_LISTEN_PORT: TCP BRC-143 subtree push ingest (standard 8726); 0 = disabled
+  blockListenPort: 0     # BLOCK_LISTEN_PORT: TCP BRC-144 block push ingest (standard 8727); 0 = disabled
   # Block control-plane PoW gate. requireBlockPow gates every BRC-131 announce
   # the proxy emits on real header proof-of-work. DEFAULT TRUE, matching the
   # binary since v1.25.0 (the default appVersion satisfies this; earlier images
@@ -98,20 +98,20 @@ config:
   # enables the gate on those images too and false really disables it.
   # minPowBits is the difficulty floor in Bitcoin compact nBits: "0" (default)
   # means header self-consistency only. mainnet/testnet "0x1d00ffff",
-  # devnet "0x207fffff". Hex MUST carry the 0x prefix — a bare "1d00ffff" is
+  # devnet "0x207fffff". Hex MUST carry the 0x prefix: a bare "1d00ffff" is
   # parsed as decimal and the proxy refuses to start.
   requireBlockPow: true    # REQUIRE_BLOCK_POW
   minPowBits: "0"          # MIN_POW_BITS
   # BRC-148 BEEF object plane. BEEF is an OPEN class: submission records (0xBEEF-tagged
   # envelopes) and framed FrameVer 0x09 ride the public tx port 8725 regardless of
-  # beefListenPort — which only opens an OPTIONAL dedicated single-class lane (standard
+  # beefListenPort: which only opens an OPTIONAL dedicated single-class lane (standard
   # 8728) for flow separation / load balancing, never admission. 0 = no dedicated lane.
   # beefShardBits sizes the plane band (0x1000 + 2^bits groups); must match listeners/retry.
   # beefMaxObjectBytes bounds one accepted object (BRC-148 ingress MUST-bound).
   # Requires image >= v1.20.0 (the default appVersion satisfies this); older pins ignore the BEEF_* envs.
-  beefListenPort: 0        # BEEF_LISTEN_PORT — optional dedicated BEEF lane (standard 8728); 0 = disabled
-  beefShardBits: 0         # BEEF_SHARD_BITS — 0-12, 0 = single group
-  beefMaxObjectBytes: 1048576       # BEEF_MAX_OBJECT_BYTES — D9 open-ingress bound (1 MiB)
+  beefListenPort: 0        # BEEF_LISTEN_PORT: optional dedicated BEEF lane (standard 8728); 0 = disabled
+  beefShardBits: 0         # BEEF_SHARD_BITS: 0-12, 0 = single group
+  beefMaxObjectBytes: 1048576       # BEEF_MAX_OBJECT_BYTES: open-ingress bound (1 MiB)
   # Comma-separated NIC names for multicast egress. Overridden by networking.multus.interface
   # when networking.mode=multus.
   multicastIf: "eth0"
@@ -150,10 +150,10 @@ config:
   # bundle-capable consumer takes the bundle whole). Coalesce at the ORIGIN,
   # never at a spine. Default off preserves per-frame egress.
   # See bsv-multicast/docs/brc-142-coalescing-frame.md.
-  coalesce: false            # COALESCE — master switch
-  coalesceMaxBytes: 1500     # COALESCE_MAX_BYTES — max bundle datagram size (0 ⇒ 1500, the Ethernet MTU baseline)
-  coalesceMaxMembers: 0      # COALESCE_MAX_MEMBERS — max transactions per bundle (0 = MTU-bound)
-  coalesceCarryTxid: false   # COALESCE_CARRY_TXID — carry per-member TxID on the wire (dedup/billing) vs recompute
+  coalesce: false            # COALESCE: master switch
+  coalesceMaxBytes: 1500     # COALESCE_MAX_BYTES: max bundle datagram size (0 ⇒ 1500, the Ethernet MTU baseline)
+  coalesceMaxMembers: 0      # COALESCE_MAX_MEMBERS: max transactions per bundle (0 = MTU-bound)
+  coalesceCarryTxid: false   # COALESCE_CARRY_TXID: carry per-member TxID on the wire (dedup/billing) vs recompute
 
   # Two-tier ingress TxID deduplication.
   # Tier-1: in-process LRU (always active when localCap > 0).
@@ -164,19 +164,19 @@ config:
     localCap: 1048576    # tier-1 LRU capacity; 0 = disable
     backend: ""          # redis|aerospike|memory|none; empty infers redis when redisAddr set, else none
     redisAddr: ""        # Redis/Valkey/Dragonfly addr; empty = local-only (no cluster coordination)
-    prefix: "bsp:tx:"   # key prefix — must match listener's ingressSet.prefix
+    prefix: "bsp:tx:"   # key prefix: must match listener's ingressSet.prefix
     ttl: "10m"           # tier-2 entry TTL (1m–30m typical)
     # Aerospike Community Edition (required when backend=aerospike). TTL floor 1s.
     aerospikeHosts: ""              # comma-separated host:port
     aerospikeNamespace: "cache"
     aerospikeSet: "bsp"
   debug: false  # deprecated alias for logLevel=debug
-  # Unified logging — see shard-common/docs/logging.md
+  # Unified logging: see shard-common/docs/logging.md
   logFormat: "text"   # text (stderr) | json (stdout, for fleet aggregation)
   logLevel: "info"    # debug|info|warn|error; runtime-togglable via POST /loglevel + SIGHUP
   traceSampling: 0    # 0..1 trace head sampling (0 = off; exports via otlpEndpoint; control-plane only)
   metricsAddr: ":9100"
-  # stampSource: stamp the BRC-129 HashKey from the OBSERVED per-consumer source IP
+  # stampSource: stamp the BRC-124 HashKey from the OBSERVED per-consumer source IP
   # (authoritative own-traffic exclusion). Leave null to inherit the binary default
   # (true); set false ONLY when a source-rewriting LB sits in front of the proxy.
   stampSource: null
@@ -190,14 +190,14 @@ config:
   # ShardBits/SourceMode from authoritative pilot manifests once quorum +
   # hysteresis are met. Manual config above always wins; default off.
   autoShardConfig:
-    enabled: false          # MANIFEST_CONSUMER_ENABLED — master switch
-    bootstrap: "optional"   # MANIFEST_BOOTSTRAP — optional | required (fail-closed: no egress until quorum)
-    pilotQuorum: 2          # PILOT_QUORUM — min distinct authoritative announcers
-    pilotHysteresis: "0s"   # PILOT_HYSTERESIS — 0 ⇒ 2 × AnnounceInterval
-    beaconScope: ""         # MANIFEST_BEACON_SCOPE — empty inherits mcScope
-    beaconPort: 9001        # MANIFEST_BEACON_PORT — matches shard-manifest -port
-    liveResharding: false   # LIVE_RESHARDING — true = dual-emit bridging; false = restart-on-adopt
-    bridgingWindow: "0s"    # BRIDGING_WINDOW — 0 ⇒ honour pilot TransitionEpoch
+    enabled: false          # MANIFEST_CONSUMER_ENABLED: master switch
+    bootstrap: "optional"   # MANIFEST_BOOTSTRAP: optional | required (fail-closed: no egress until quorum)
+    pilotQuorum: 2          # PILOT_QUORUM: min distinct authoritative announcers
+    pilotHysteresis: "0s"   # PILOT_HYSTERESIS: 0 ⇒ 2 × AnnounceInterval
+    beaconScope: ""         # MANIFEST_BEACON_SCOPE: empty inherits mcScope
+    beaconPort: 9001        # MANIFEST_BEACON_PORT: matches shard-manifest -port
+    liveResharding: false   # LIVE_RESHARDING: true = dual-emit bridging; false = restart-on-adopt
+    bridgingWindow: "0s"    # BRIDGING_WINDOW: 0 ⇒ honor pilot TransitionEpoch
 
 service:
   type: ClusterIP
@@ -230,7 +230,7 @@ probes:
     failureThreshold: 3
 
 # Datapath component (recvmmsg/sendmmsg packet loop).
-# CPU-bound under load — these are conservative starting points; tune limits
+# CPU-bound under load: these are conservative starting points; tune limits
 # upward against your own throughput benchmark before high-rate production use.
 # Leaving this empty ({}) yields BestEffort QoS and no admission control.
 resources:

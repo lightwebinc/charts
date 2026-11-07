@@ -6,7 +6,7 @@
 # args block into the container's command. Binaries are configured by flags;
 # the only env var they read is LOG_FORMAT (rendered from logFormat below).
 
-# Binary selector — choose one of:
+# Binary selector: choose one of:
 #   subtx-gen            traffic generator (BRC-124/128 frames)
 #   send-anchor-frame    BRC-134 anchor tx sender
 #   send-block-announce  BRC-131 block/coinbase announcements
@@ -41,7 +41,7 @@ podLabels: {}
 podSecurityContext: {}
 securityContext: {}
 
-# Pure UDP/TCP client — does not require fabric NIC access.
+# Pure UDP/TCP client: does not require fabric NIC access.
 # `pod` = default primary CNI; `host` = hostNetwork; `multus` available
 # if the operator wants the generator to bind a specific fabric NIC.
 networking:
@@ -62,11 +62,11 @@ args:
 # Per-mode args. Only the block matching `.Values.mode` is rendered.
 # Each key maps directly to the binary's flag of the same kebab-case name.
 
-# subtx-gen — full traffic generator
+# subtx-gen: full traffic generator
 subtxGen:
-  # Submit over TCP — args.addr is then a TCP target (the standard 8725
-  # submission lane: a stream of BRC frames, no envelope) — instead of UDP,
-  # which the binary marks deprecated. false is the chart's previous behaviour,
+  # Submit over TCP: args.addr is then a TCP target (the standard 8725
+  # submission lane: a stream of BRC frames, no envelope), instead of UDP,
+  # which the binary marks deprecated. false is the chart's previous behavior,
   # so upgrading this chart changes no existing install. mode: unicast only;
   # the binary ignores it under direct-multicast.
   tcp: false
@@ -79,7 +79,7 @@ subtxGen:
   count: 0
   workers: 0
   payloadSize: 512
-  # brc128 | brc124 | mixed — brc128 (BRC-30 EF) is the default: the fabric is
+  # brc128 | brc124 | mixed: brc128 (BRC-30 EF) is the default: the fabric is
   # EF-native, and every payload is exactly one valid tx of payloadSize bytes
   # (min 75 for brc128/mixed, 60 for brc124; below-minimum fails at startup).
   payloadFormat: "brc128"
@@ -103,19 +103,19 @@ subtxGen:
   mode: "unicast"           # unicast | direct-multicast
   bindSource: ""            # IPv6 literal; required when mode=direct-multicast
   egressIface: ""           # outbound NIC for multicast egress (host or multus NIC name)
-  sourceMode: "ssm"         # asm | ssm
+  sourceMode: "ssm"         # asm | ssm (binary default asm; ssm matches the other charts)
   scope: "site"             # site | global
   mcGroupId: "0x000B"
   egressPort: 9001
 
-# send-anchor-frame — BRC-134 anchors
+# send-anchor-frame: BRC-134 anchors
 sendAnchorFrame:
   count: 10
   payloadSize: 256
   interval: "50ms"
   tcp: false
 
-# send-block-announce — BRC-131 block + coinbase pairs
+# send-block-announce: BRC-131 block + coinbase pairs
 sendBlockAnnounce:
   # addr default for this binary is [::1]:9002 (proxy TCP). Override via args.addr.
   blocks: 10
@@ -123,7 +123,7 @@ sendBlockAnnounce:
   interval: "100ms"
   coinbase: true
 
-# send-subtree-data — BRC-132 subtree data
+# send-subtree-data: BRC-132 subtree data
 sendSubtreeData:
   frames: 20
   msgType: "hashes"         # hashes | full
@@ -132,7 +132,7 @@ sendSubtreeData:
   subtreeCount: 0
   interval: "50ms"
 
-# send-subtree-push — BRC-143 subtree push objects.
+# send-subtree-push: BRC-143 subtree push objects.
 # Targets the proxy's privileged subtree lane (-subtree-listen-port, standard
 # 8726), which must be enabled and reachable from this pod. Set args.addr.
 sendSubtreePush:
@@ -144,7 +144,7 @@ sendSubtreePush:
   seed: 0                    # string label for deterministic hashes; 0 = omit (binary default "subtree-push")
   logHashes: false
 
-# send-block-push — BRC-144 block push objects.
+# send-block-push: BRC-144 block push objects.
 # Targets the proxy's privileged block lane (-block-listen-port, standard 8727).
 sendBlockPush:
   count: 10

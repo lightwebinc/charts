@@ -6,7 +6,7 @@
 
   `rules` REPLACES this set outright; `additionalRules` appends to it. The
   submitter-role invariant needs to know which bridges front one cluster, hence
-  clusterSelectorLabel — a fleet-wide sum would report every extra cluster as a
+  clusterSelectorLabel: a fleet-wide sum would report every extra cluster as a
   double-submitter.
 */ -}}
 {{- $cl := .Values.metrics.prometheusRule.clusterSelectorLabel | default "cluster" -}}
@@ -46,7 +46,7 @@ spec:
             summary: "Cluster is selecting the bridge as a chain-sync source"
             description: >-
               Rare bursts accompany multi-peer degradation, but a SUSTAINED rate
-              means the synthetic peer-id no longer diverts catchup — the id was
+              means the synthetic peer-id no longer diverts catchup: the id was
               registered, or the cluster's gate semantics changed on upgrade.
               The next node to fall behind may wedge. Re-verify config.peerId and
               the cluster's isPeerBad/isPeerMalicious gates.
@@ -72,7 +72,7 @@ spec:
             summary: "More than one bridge holds the submitter role"
             description: >-
               Receivers dedup by hash so nothing is corrupted, but the failover
-              logic is confused — most likely a standby promoted while the
+              logic is confused: most likely a standby promoted while the
               primary was still publishing.
 
         - alert: BridgeLaneStalled
@@ -119,7 +119,7 @@ spec:
             summary: "Cluster is not acting on announcements"
             description: >-
               Announcements are acked but pulls are not following. Check
-              config.advertise, config.apiPrefix and the topic names — a wrong
+              config.advertise, config.apiPrefix and the topic names: a wrong
               advertise URL keeps announcing successfully and never gets pulled.
 
         - alert: BridgeUnattributedSubmits
@@ -131,7 +131,7 @@ spec:
             description: >-
               A partial-failure response named transactions that were not in the
               batch it answered, so those transactions' outcome is UNKNOWN. They
-              are excluded from `accepted` rather than assumed good — delivery
+              are excluded from `accepted` rather than assumed good: delivery
               counts are incomplete, not merely bad.
 
         - alert: BridgeSlowRetrieval
@@ -156,7 +156,7 @@ spec:
             summary: "Cluster FSM is not RUNNING"
             description: >-
               Explains announcements that succeed while nothing is pulled. The
-              bridge deliberately keeps announcing — the cluster is unmodified
+              bridge deliberately keeps announcing: the cluster is unmodified
               and decides for itself what to do with an announcement.
       {{- end }}
       {{- with .Values.metrics.prometheusRule.additionalRules }}

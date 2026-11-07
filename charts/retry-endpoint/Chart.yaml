@@ -1,12 +1,12 @@
 apiVersion: v2
 name: retry-endpoint
-description: BSV multicast retry endpoint — caches frames and retransmits on NACK
+description: BSV multicast retry endpoint, caches frames and retransmits on NACK
 type: application
 version: 0.5.6
 # appVersion MUST equal a tag published on ghcr.io/lightwebinc/retry-endpoint
 # (the chart's tag:"" default pulls this). Images are published manually via the
 # binary repo's image-publish.yml workflow; bump appVersion ONLY in lockstep with
-# an image publish — binary git tags (v1.4.x) are NOT image tags until published.
+# an image publish: binary git tags (v1.4.x) are NOT image tags until published.
 appVersion: "1.14.1"
 kubeVersion: ">= 1.27.0-0"
 keywords:

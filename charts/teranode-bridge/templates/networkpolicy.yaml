@@ -2,7 +2,7 @@
 {{- $c := .Values.config -}}
 {{- /* Three ports, three audiences, three rules: the delivery side reaches the
        lanes, the Teranode cluster reaches the retrieval plane, Prometheus
-       reaches metrics. Fail-closed — an empty `from` for a rule admits no peer
+       reaches metrics. Fail-closed: an empty `from` for a rule admits no peer
        on that port. Under networking.mode=host this policy matches nothing that
        matters: host traffic never enters the pod network, so the node firewall
        is the real control. */ -}}

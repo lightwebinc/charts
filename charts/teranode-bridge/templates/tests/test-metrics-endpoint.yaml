@@ -22,7 +22,7 @@ spec:
           base=http://{{ include "teranode-bridge.fullname" . }}:{{ include "teranode-bridge.port" ($c.metricsAddr | default "[::]:9146") }}
           wget -q -O - "$base/healthz" > /dev/null
           wget -q -O - "$base{{ .Values.metrics.path }}" > /dev/null
-          # /readyz answers 200 only once every lane is bound — the one check
+          # /readyz answers 200 only once every lane is bound: the one check
           # that distinguishes a live bridge from a running process.
           wget -q -O - "$base/readyz" > /dev/null
           # The Teranode-shaped health routes. Liveness must answer even when a

@@ -12,7 +12,7 @@ networking:
     dnsPolicy: ClusterFirstWithHostNet
 
 config:
-  # NOT :9100 — the Prometheus node-exporter DaemonSet owns hostPort 9100 on every
+  # NOT :9100: the Prometheus node-exporter DaemonSet owns hostPort 9100 on every
   # k8s node, and a hostNetwork pod binding 9100 would collide (FailedScheduling /
   # bind conflict). The bind addr (env) and the declared port (below) must agree.
   metricsAddr: ":9110"
@@ -25,7 +25,7 @@ config:
   # limit so it survives the inter-region tunnel hops (default 1 dies on first hop).
   egressMulticastLoop: true
   egressHoplimit: 16
-  # SSM default: bind a distinct source IPv6 per node — use the host's fabric
+  # SSM default: bind a distinct source IPv6 per node: use the host's fabric
   # address (doc-safe placeholder here; set per release).
   bindSource: "2001:db8::21"
 

@@ -17,7 +17,7 @@
 *.tmproj
 .vscode/
 
-# CI / tooling — not part of the chart payload
+# CI / tooling: not part of the chart payload
 .github/
 .helmignore
 ci/

@@ -42,7 +42,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
 {{/*
-port — the port a listen address binds, so containerPort/Service port can never
+port: the port a listen address binds, so containerPort/Service port can never
 drift from the flag the process actually gets. Input is the raw listen string
 ("[::]:9143", "192.0.2.10:9165", ":9167"); output is the trailing number.
 */}}
@@ -50,13 +50,13 @@ drift from the flag the process actually gets. Input is the raw listen string
 {{- $addr := . | toString -}}
 {{- $p := regexFind "[0-9]+$" $addr -}}
 {{- if not $p -}}
-{{- fail (printf "arcade-bridge: cannot derive a port from listen address %q — it must end in :<port>" $addr) -}}
+{{- fail (printf "arcade-bridge: cannot derive a port from listen address %q: it must end in :<port>" $addr) -}}
 {{- end -}}
 {{- $p -}}
 {{- end -}}
 
 {{/*
-facadeEnabled — non-empty when the facade actually starts: edgeIngress set and
+facadeEnabled: non-empty when the facade actually starts: edgeIngress set and
 mode != sink, exactly the binary's own condition. Everything facade-shaped
 (flags, containerPort, Service, NetworkPolicy rule) keys off this so the chart
 never advertises a listener the process does not open.
@@ -67,7 +67,7 @@ never advertises a listener the process does not open.
 {{- end -}}
 
 {{/*
-apiPrefix / announceUrl — the URL merkle-service is told to fetch from, built
+apiPrefix / announceUrl: the URL merkle-service is told to fetch from, built
 the same way the binary builds it: TrimRight(advertise, "/") + prefix. This is
 the value that silently breaks proof ingest when wrong, so NOTES.txt prints it
 and validate rejects the doubled form.
@@ -81,7 +81,7 @@ and validate rejects the doubled form.
 {{- end -}}
 
 {{/*
-validate — install-time refusal for configurations that are wrong in a way the
+validate: install-time refusal for configurations that are wrong in a way the
 running process would not tell you about (or would only tell you by exiting 2
 into a crashloop). Warnings, not failures, live in NOTES.txt.
 */}}
@@ -91,10 +91,10 @@ into a crashloop). Warnings, not failures, live in NOTES.txt.
 {{- $adv := trimSuffix "/" ($c.advertise | default "") -}}
 {{- $prefix := include "arcade-bridge.apiPrefix" . -}}
 {{- if and $adv (hasSuffix $prefix $adv) -}}
-{{- fail (printf "arcade-bridge: config.advertise (%q) already ends with config.apiPrefix (%q). The announced URL is advertise + apiPrefix, so this announces %q — merkle-service's subtree and block fetches would 404 against a doubled path while every announcement kept succeeding, and every 404 charges this bridge's fetch-health breaker. Drop the prefix from config.advertise." $adv $prefix (printf "%s%s" $adv $prefix)) -}}
+{{- fail (printf "arcade-bridge: config.advertise (%q) already ends with config.apiPrefix (%q). The announced URL is advertise + apiPrefix, so this announces %q: merkle-service's subtree and block fetches would 404 against a doubled path while every announcement kept succeeding, and every 404 charges this bridge's fetch-health breaker. Drop the prefix from config.advertise." $adv $prefix (printf "%s%s" $adv $prefix)) -}}
 {{- end -}}
 {{- if and $sink $c.edgeIngress -}}
-{{- fail "arcade-bridge: config.edgeIngress is set with config.mode=sink. The facade never starts in sink mode (sink's whole point is touching nothing), so the binary would silently ignore it — Arcade would be pointed at a facade that does not exist. Either drop config.edgeIngress or set config.mode=all." -}}
+{{- fail "arcade-bridge: config.edgeIngress is set with config.mode=sink. The facade never starts in sink mode (sink's whole point is touching nothing), so the binary would silently ignore it: Arcade would be pointed at a facade that does not exist. Either drop config.edgeIngress or set config.mode=all." -}}
 {{- end -}}
 {{- if and $c.hydrateAsset (not (include "arcade-bridge.facadeEnabled" .)) -}}
 {{- fail "arcade-bridge: config.hydrateAsset is set but the facade is off (config.edgeIngress is empty or config.mode is sink). Hydration only runs inside the facade, so the binary would silently ignore this value. Set config.edgeIngress to enable the facade, or drop config.hydrateAsset." -}}
@@ -102,12 +102,12 @@ into a crashloop). Warnings, not failures, live in NOTES.txt.
 {{- end -}}
 
 {{/*
-flag — render one CLI flag from a values key.
+flag: render one CLI flag from a values key.
   bool true            -> "-name"        (bare)
   bool false / null    -> omitted        (binary default applies)
   "" / "0s" / 0        -> omitted        (binary default applies)
   anything else        -> "-name=value"
-Flags whose ZERO VALUE MEANS SOMETHING cannot go through here — omission would
+Flags whose ZERO VALUE MEANS SOMETHING cannot go through here: omission would
 silently restore the binary's non-zero default. Those are written out
 unconditionally in .args below.
 */}}
@@ -130,7 +130,7 @@ unconditionally in .args below.
 {{- end -}}
 
 {{/*
-joinFlag — a list rendered as ONE comma-joined flag. The binary takes -kafka
+joinFlag: a list rendered as ONE comma-joined flag. The binary takes -kafka
 and -edge-ingress as single comma-separated values and splits them itself
 (unlike teranode-bridge, whose flags repeat), so the chart models them as YAML
 lists for `--set config.kafka[0]=...` ergonomics and joins here.
@@ -149,7 +149,7 @@ lists for `--set config.kafka[0]=...` ergonomics and joins here.
 {{- include "arcade-bridge.flag" (dict "name" "subtree-listen" "v" $c.subtreeListen) -}}
 {{- include "arcade-bridge.flag" (dict "name" "block-listen" "v" $c.blockListen) -}}
 {{- include "arcade-bridge.flag" (dict "name" "max-object" "v" $c.maxObject) -}}
-{{- /* Retrieval plane: runs in EVERY mode, sink included — the binary starts
+{{- /* Retrieval plane: runs in EVERY mode, sink included: the binary starts
        it unconditionally and /readyz requires it. */ -}}
 {{- include "arcade-bridge.flag" (dict "name" "retrieval-listen" "v" $c.retrievalListen) -}}
 {{- include "arcade-bridge.flag" (dict "name" "api-prefix" "v" $c.apiPrefix) -}}

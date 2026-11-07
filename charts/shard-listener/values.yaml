@@ -1,7 +1,8 @@
 # Default values for shard-listener.
 # Most binary flags are exposed under .config (advanced ones empty/disabled by
-# default); the NACK tail-probe family, -rebucket-relay and -retry-tee
-# (RETRY_TEE, image >= 1.24.1) are extraEnv-only.
+# default); the NACK tail-probe family, -rebucket-relay, -retry-tee
+# (RETRY_TEE, image >= 1.24.1), -control-group-compat, -manifest-beacon-port,
+# -reassembly-ttl and -reassembly-max-age are extraEnv-only.
 
 # When workloadType=Deployment, replicaCount controls replicas.
 # When workloadType=DaemonSet, replicaCount is ignored (one pod per matching node).
@@ -9,7 +10,7 @@ replicaCount: 1
 
 # Deployment | DaemonSet.
 # WARNING: the default below (Deployment, replicaCount=1) is for single-node test /
-# lab use only. It does NOT provide fabric coverage — a single listener cannot receive
+# lab use only. It does NOT provide fabric coverage: a single listener cannot receive
 # multicast on every node. For production set workloadType=DaemonSet and constrain it to
 # fabric nodes with nodeSelector/affinity (a bare DaemonSet schedules on every node,
 # including control-plane). See multicast-kube-infra docs/operations
@@ -66,8 +67,10 @@ networking:
 
 # Most flags in shard-listener/config/config.go; the NACK tail-probe family
 # (-nack-backoff-base, -nack-tail-probe*, -nack-max-flows, -nack-max-forward-jump)
-# -rebucket-relay and -retry-tee (RETRY_TEE) are settable via extraEnv (all
-# honoured by the default appVersion; on older pins -nack-tail-probe* needs
+# -rebucket-relay, -retry-tee (RETRY_TEE), -control-group-compat,
+# -manifest-beacon-port, -reassembly-ttl and -reassembly-max-age are settable
+# via extraEnv (all
+# honored by the default appVersion; on older pins -nack-tail-probe* needs
 # image >= 1.15.0, -rebucket-relay >= 1.10.1 and -retry-tee >= 1.24.1).
 config:
   multicastIf: "eth0"
@@ -96,7 +99,7 @@ config:
 
   # Role split (P3b): collapsed (default; join fabric (S,G) + gap/NACK + fan-out)
   # | receiver (mcast half) | delivery (consumer half: unicast-ingest + fan-out,
-  # NO mcast join, NO gap/NACK — receives raw frames from a receiver over unicast).
+  # NO mcast join, NO gap/NACK: receives raw frames from a receiver over unicast).
   mode: "collapsed"
 
   # receiver mode only: the delivery-tier host:port set every demuxed frame is
@@ -118,7 +121,7 @@ config:
   ssmBootstrapRefresh: "30s"
 
   # localSource: the co-located proxy's BIND_SOURCE on a collapsed node. Excluded
-  # from every roster-driven (S,G) join — joining the node's own source on the PIM
+  # from every roster-driven (S,G) join: joining the node's own source on the PIM
   # interface installs an iif==oif mroute and loops originated frames until
   # hop-limit death (~60x amplification). Leave empty unless proxy and listener
   # are co-located on the same node; this listener will not receive own-node
@@ -128,7 +131,7 @@ config:
   # Downstream egress
   egressAddr: "127.0.0.1:9100"
   egressProto: "udp"
-  # true (binary default): forward payload-only (raw BSV tx) — what a downstream
+  # true (binary default): forward payload-only (raw BSV tx): what a downstream
   # node/miner expects. Set false only when the downstream re-reads whole frames
   # (e.g. domain bridging).
   stripHeader: true
@@ -174,7 +177,7 @@ config:
   # BRC-132 subtree data
   subtreeDataEnabled: false
 
-  # Egress sliding-window dedup (keyed by HashKey∥SeqNum)
+  # Egress sliding-window dedup (keyed by group, SubtreeID and SeqNum)
   egressDedupCap: 0
   egressDedupTtl: "2s"
 
@@ -205,7 +208,7 @@ config:
   # knows a TxID is already on the multicast network. Prefix MUST match
   # the proxy chart's config.txidDedupPrefix exactly. Leave the backend at
   # none (and ingressSetRedisAddr empty) to disable. The two stores are
-  # addressed independently — either may use a different backend/endpoint.
+  # addressed independently: either may use a different backend/endpoint.
   ingressSetBackend: ""
   ingressSetRedisAddr: ""
   ingressSetAerospikeHosts: ""
@@ -225,23 +228,23 @@ config:
   # Block control-plane integrity. requireBlockPow gates BRC-131 block
   # announces on real header proof-of-work and drops any deprecated standalone
   # BRC-133 coinbase frame (the coinbase rides inline in the block) before
-  # fan-out — announces arriving over multicast
+  # fan-out: announces arriving over multicast
   # bypass the local proxy, so the edge re-validates. DEFAULT TRUE, matching the
-  # binary default since image 1.16.0 — the default appVersion satisfies this
+  # binary default since image 1.16.0: the default appVersion satisfies this
   # (older pins default false; the env is
   # rendered unconditionally, so the chart value governs either way); BRC-135
   # header egress is fed downstream of this gate, so turning it off also stops
   # validating anything the header lane emits.
   # minPowBits is the difficulty floor in Bitcoin compact nBits: "0" (default)
   # means header self-consistency only. mainnet/testnet "0x1d00ffff",
-  # devnet "0x207fffff". Hex MUST carry the 0x prefix — a bare "1d00ffff" is
+  # devnet "0x207fffff". Hex MUST carry the 0x prefix: a bare "1d00ffff" is
   # parsed as decimal and the listener refuses to start.
   requireBlockPow: true       # REQUIRE_BLOCK_POW
   minPowBits: "0"             # MIN_POW_BITS
 
   drainTimeout: "0s"
   debug: false  # deprecated alias for logLevel=debug
-  # Unified logging — see shard-common/docs/logging.md
+  # Unified logging: see shard-common/docs/logging.md
   logFormat: "text"   # text (stderr) | json (stdout, for fleet aggregation)
   logLevel: "info"    # debug|info|warn|error; runtime-togglable via POST /loglevel + SIGHUP
   traceSampling: 0    # 0..1 trace head sampling (0 = off; exports via otlpEndpoint; control-plane only)
@@ -259,13 +262,13 @@ config:
   # pilot groups via runtime AddGroup/RemoveGroup) once quorum + hysteresis
   # are met. Manual config above always wins; default off.
   autoShardConfig:
-    enabled: false                # MANIFEST_CONSUMER_ENABLED — master switch
-    bootstrap: "optional"         # MANIFEST_BOOTSTRAP — optional | required (fail-closed)
-    pilotQuorum: 2                # PILOT_QUORUM — min distinct authoritative announcers
-    pilotHysteresis: "0s"         # PILOT_HYSTERESIS — 0 ⇒ 2 × AnnounceInterval
-    shardIncludeFromManifest: false  # SHARD_INCLUDE_FROM_MANIFEST — additive auto-join: union(shardInclude, pilot groups)
-    liveResharding: false         # LIVE_RESHARDING — bridging vs restart-on-adopt
-    bridgingWindow: "0s"          # BRIDGING_WINDOW — 0 ⇒ honour pilot TransitionEpoch
+    enabled: false                # MANIFEST_CONSUMER_ENABLED: master switch
+    bootstrap: "optional"         # MANIFEST_BOOTSTRAP: optional | required (fail-closed)
+    pilotQuorum: 2                # PILOT_QUORUM: min distinct authoritative announcers
+    pilotHysteresis: "0s"         # PILOT_HYSTERESIS: 0 ⇒ 2 × AnnounceInterval
+    shardIncludeFromManifest: false  # SHARD_INCLUDE_FROM_MANIFEST: additive auto-join: union(shardInclude, pilot groups)
+    liveResharding: false         # LIVE_RESHARDING: bridging vs restart-on-adopt
+    bridgingWindow: "0s"          # BRIDGING_WINDOW: 0 ⇒ honor pilot TransitionEpoch
 
 service:
   type: ClusterIP
@@ -298,7 +301,7 @@ probes:
     failureThreshold: 3
 
 # Datapath component (multicast RX + reassembly + NACK recovery).
-# CPU-bound under load — conservative starting points; tune against your own
+# CPU-bound under load: conservative starting points; tune against your own
 # benchmark. Empty ({}) yields BestEffort QoS and no admission control.
 # Note: when running as a DaemonSet these apply per node.
 resources:

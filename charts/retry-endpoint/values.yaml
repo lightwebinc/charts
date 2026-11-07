@@ -1,7 +1,9 @@
 # Default values for retry-endpoint.
 # Most binary flags are exposed under .config; advanced ones empty/disabled by default.
 # extraEnv-only: RL_SENDER_RATE / RL_SENDER_WINDOW, TEE_LISTEN and MC_JOIN_ENABLED
-# (tee ingest + join gate, image >= 1.10.1).
+# (tee ingest + join gate, image >= 1.10.1), CONTROL_GROUP_COMPAT, INGRESS_WORKERS,
+# INGRESS_RECV_BUF_BYTES, INGRESS_QUEUE_DEPTH and INGRESS_PROCS (the last two need
+# image >= 1.15.0) and CACHE_MAX_BYTES (image >= 1.16.0).
 
 replicaCount: 1
 
@@ -48,7 +50,8 @@ networking:
     dnsPolicy: ClusterFirstWithHostNet
 
 # Most flags in retry-endpoint/config/config.go; -rl-sender-rate/-rl-sender-window,
-# -tee-listen and -mc-join-enabled are settable via extraEnv.
+# -tee-listen, -mc-join-enabled, -control-group-compat, the -ingress-* sizing
+# flags and -cache-max-bytes are settable via extraEnv.
 config:
   # Ingress (multicast receive)
   mcIface: "eth0"
@@ -107,12 +110,12 @@ config:
   nackAddr: ""
   nackWorkers: 0        # 0 = NumCPU
 
-  # Cache — modular shard-common/cache backend.
+  # Cache: modular shard-common/cache backend.
   # See https://github.com/lightwebinc/shard-common/blob/main/docs/cache-backend.md
   cacheBackend: "memory"  # memory | redis | aerospike
   redisAddr: ""           # required when cacheBackend=redis (Redis/Valkey/Dragonfly); cross-instance dedup with memory backend
   # Aerospike Community Edition (required when cacheBackend=aerospike).
-  # TTL granularity is whole seconds, floor 1s — all frame TTLs satisfy this.
+  # TTL granularity is whole seconds, floor 1s: all frame TTLs satisfy this.
   # The namespace must be provisioned on the cluster.
   aerospikeHosts: ""              # comma-separated host:port (e.g. "aero-0:3000,aero-1:3000")
   aerospikeNamespace: "cache"
@@ -127,7 +130,7 @@ config:
   # and caches/retransmits FrameVer 0x09 frames; beefShardBits must match the proxy;
   # cacheTtlBeef is the V9 live-tail resend window.
   #
-  # Requires image >= 1.7.0 — satisfied by the default appVersion. An older
+  # Requires image >= 1.7.0: satisfied by the default appVersion. An older
   # image.tag pin ignores the rendered BEEF env vars and joins no plane band.
   cacheTtlBeef: "60s"
   beefEnabled: false
@@ -172,7 +175,7 @@ config:
   # Runtime
   drainTimeout: "0s"
   debug: false  # deprecated alias for logLevel=debug
-  # Unified logging — see https://github.com/lightwebinc/shard-common/blob/main/docs/logging.md
+  # Unified logging: see https://github.com/lightwebinc/shard-common/blob/main/docs/logging.md
   logFormat: "text"   # text (stderr) | json (stdout, for fleet aggregation)
   logLevel: "info"    # debug|info|warn|error; runtime-togglable via POST /loglevel + SIGHUP
   traceSampling: 0    # 0..1 trace head sampling (0 = off; exports via otlpEndpoint; control-plane only)
@@ -215,7 +218,7 @@ probes:
 
 # Recovery component (frame cache + NACK serving / retransmit, cache-backend backed).
 # Lighter datapath than proxy/listener but cache lookups dominate; size memory to
-# your resend window. Conservative starting points — tune against your own load.
+# your resend window. Conservative starting points: tune against your own load.
 # Empty ({}) yields BestEffort QoS and no admission control.
 resources:
   requests:

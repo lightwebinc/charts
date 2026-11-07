@@ -3,7 +3,8 @@
 # The daemon is configured exclusively via environment variables. Each
 # values key maps to one daemon env var (unprefixed UPPER_SNAKE_CASE,
 # e.g. SHARD_BITS) and must agree with the rest of the multicast
-# network (especially `shardBits`).
+# network (especially `shardBits`). CONTROL_GROUP_COMPAT (-control-group-compat,
+# image >= 0.4.3) is extraEnv-only.
 
 replicaCount: 1
 
@@ -40,9 +41,9 @@ securityContext:
   readOnlyRootFilesystem: true
 
 # Networking modes:
-#   pod    — default primary CNI (works for any cluster with IPv6 multicast egress).
-#   host   — hostNetwork; pin to nodes with the fabric NIC.
-#   multus — attach a secondary NetworkAttachmentDefinition for the fabric NIC.
+#   pod: default primary CNI (works for any cluster with IPv6 multicast egress).
+#   host: hostNetwork; pin to nodes with the fabric NIC.
+#   multus: attach a secondary NetworkAttachmentDefinition for the fabric NIC.
 networking:
   mode: pod
   multus:
@@ -59,7 +60,7 @@ manifest:
   joinedGroups: ""                    # comma list of indices (hex/dec), or "all", or empty
   # BRC-148 per-domain plane descriptors (DOMAINS env, comma-joined). Each entry:
   #   id:bits=N[:ssm][:active][:slotspan=S][:generation=HEX32][:succbits=N:succepoch=T[:succgen=HEX][:succssm]]
-  # Requires image >= 0.3.0 — satisfied by the default appVersion; an older
+  # Requires image >= 0.3.0: satisfied by the default appVersion; an older
   # image.tag pin ignores DOMAINS.
   domains: []                         # e.g. ["0x1:bits=12:active:ssm"]
   bitmap: "auto"                      # auto | list | bitmap
@@ -71,7 +72,7 @@ manifest:
   # groups from pilot manifests only, so leaving this false makes
   # config.autoShardConfig.shardIncludeFromManifest a no-op on consumers.
   pilotOnly: false
-  # BRC-139 Successor block — announces a re-shard generation transition.
+  # BRC-139 Successor block: announces a re-shard generation transition.
   # Emitted only when generationId is set; shardBits must be within ±1 of
   # the manifest's own shardBits, and transitionEpoch is Unix seconds
   # at which the successor becomes the sole active generation.
@@ -88,7 +89,7 @@ manifest:
   announceInterval: "300s"
   ttl: "0s"                           # 0 = consumer default (3× interval)
   debug: false  # deprecated alias for logLevel=debug
-  # Unified logging — see https://github.com/lightwebinc/shard-common/blob/main/docs/logging.md
+  # Unified logging: see https://github.com/lightwebinc/shard-common/blob/main/docs/logging.md
   logFormat: "json"   # text (stderr) | json (stdout; default for this daemon)
   logLevel: "info"    # debug|info|warn|error; runtime-togglable via POST /loglevel + SIGHUP
   traceSampling: 0    # 0..1 trace head sampling (0 = off; exports via otlp.endpoint)

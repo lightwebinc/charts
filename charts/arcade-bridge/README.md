@@ -14,7 +14,7 @@ the bridge. The application source lives in
 
 The binary is configured by **CLI flags only** (no environment fallback, no config file), so the
 Deployment renders `args:` from `.config` in [`values.yaml`](values.yaml). Empty / `0` / `"0s"` /
-`false` values are omitted so the binary default applies; anything unmodelled goes in `extraArgs`.
+`false` values are omitted so the binary default applies; anything unmodeled goes in `extraArgs`.
 
 ## What it deploys
 
@@ -63,7 +63,7 @@ through the facade only.
 ```bash
 # OCI registry: minimum viable feed (proof ingest through the fabric)
 helm install bridge oci://ghcr.io/lightwebinc/charts/arcade-bridge \
-  --version 0.1.2 -n bsv-mcast --create-namespace \
+  --version 0.1.3 -n bsv-mcast --create-namespace \
   --set config.advertise=http://192.0.2.10:9165 \
   --set config.kafka[0]=192.0.2.10:19092
 
@@ -183,7 +183,7 @@ else to point.
 ### Observability
 
 Series are `arcade_bridge_*`, covering the lanes, the cache, announce, the facade, and the
-up-tunnel. The full catalogue is in the
+up-tunnel. The full catalog is in the
 [binary repo's configuration reference](https://github.com/lightwebinc/arcade-bridge/blob/main/docs/configuration.md#observability).
 
 | Value | Effect |
@@ -230,8 +230,7 @@ live bridge from a running process. With the facade enabled it also probes the f
 
 ## Release
 
-The `release.yml` workflow is gated. It runs only via `workflow_dispatch` with `confirm: RELEASE`.
-Tag-based auto-release is intentionally disabled.
+See [Releasing](../../README.md#releasing) in the charts repository README.
 
 ## License
 

@@ -23,7 +23,7 @@ spec:
     # Privileged push ingress (BRC-143 subtree / BRC-144 block): admit only the
     # configured peers. An empty-or-missing `from` matches ALL sources per the
     # NetworkPolicy spec, so an empty pushIngressFrom would leave the privileged
-    # path silently world-open — refuse to render instead (fail-closed).
+    # path silently world-open: refuse to render instead (fail-closed).
     {{- if not .Values.networkPolicy.pushIngressFrom }}
     {{- fail "networkPolicy.pushIngressFrom must list the permitted peers when config.subtreeListenPort or config.blockListenPort is set (an empty `from` admits ALL sources)" }}
     {{- end }}

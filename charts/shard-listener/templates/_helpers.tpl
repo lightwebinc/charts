@@ -213,7 +213,7 @@ to defend against schema bypass.
 - name: EGRESS_DEDUP_TTL
   value: {{ .Values.config.egressDedupTtl | quote }}
 {{- if .Values.config.txidDedupAddr }}
-# DEPRECATED — emit only when operator explicitly sets the alias.
+# DEPRECATED: emit only when operator explicitly sets the alias.
 - name: TXID_DEDUP_ADDR
   value: {{ .Values.config.txidDedupAddr | quote }}
 {{- if .Values.config.txidDedupPrefix }}
@@ -284,7 +284,7 @@ to defend against schema bypass.
 - name: VERIFY_PAYLOAD_HASH
   value: {{ .Values.config.verifyPayloadHash | quote }}
 # Block control-plane gate. Binary default is TRUE, so these are emitted
-# UNCONDITIONALLY — an omitted var would leave `requireBlockPow: false` a
+# UNCONDITIONALLY: an omitted var would leave `requireBlockPow: false` a
 # silent no-op. An empty value falls back to the binary default.
 - name: REQUIRE_BLOCK_POW
   value: {{ if kindIs "bool" .Values.config.requireBlockPow }}{{ .Values.config.requireBlockPow | quote }}{{ else }}"true"{{ end }}

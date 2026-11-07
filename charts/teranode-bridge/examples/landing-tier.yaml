@@ -1,7 +1,7 @@
 # Landing tier, both directions: the bridge on a node in front of a Teranode
 # cluster. Terminates all three delivery lanes, submits transactions to
 # propagation, announces subtrees and blocks into the cluster's Kafka pointing at
-# itself, serves the pulls — and publishes what this cluster produces back onto
+# itself, serves the pulls, and publishes what this cluster produces back onto
 # the object plane.
 #
 #   helm install bridge . -f examples/landing-tier.yaml \
@@ -11,7 +11,7 @@
 # hostNetwork because the Teranode cluster is on a LAN, not in this k8s cluster:
 # it must be able to dial the node address named by config.advertise, and the
 # delivery link lands on that node too. That also makes the lane ports HOST
-# ports — one bridge per node, and the rollout is Recreate (see values.yaml).
+# ports: one bridge per node, and the rollout is Recreate (see values.yaml).
 #
 # Addresses use the documentation ranges (RFC 5737 192.0.2.0/24, RFC 3849
 # 2001:db8::/32). Substitute your own.
@@ -27,7 +27,7 @@ config:
   blockListen: "[2001:db8:3f::1]:9144"
 
   # Bound on the cluster-facing address; advertise the same one, WITHOUT the API
-  # prefix — the announced URL is advertise + apiPrefix.
+  # prefix: the announced URL is advertise + apiPrefix.
   retrievalListen: "[2001:db8:3f::1]:9145"
   advertise: "" # REQUIRED: e.g. "http://[2001:db8:3f::1]:9145"
 
@@ -40,7 +40,7 @@ config:
   # base58 chars) derived from a fresh ed25519 key and registered with no p2p
   # service, so the cluster's catchup gate diverts chain sync to real peers while
   # its delivery gates keep pulling objects from here. Empty is refused at
-  # install time — see values.yaml.
+  # install time: see values.yaml.
   peerId: ""
 
   # Reverse path. localAsset DOES carry the cluster's own /api/v1 prefix.

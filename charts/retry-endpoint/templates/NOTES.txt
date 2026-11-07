@@ -7,7 +7,7 @@ Networking mode: {{ .Values.networking.mode }}
 WARNING: config.nackAddr is empty.
 The binary will auto-detect from the egress interface. In containerized
 deployments this may resolve to a SLAAC address that listeners' RETRY_ENDPOINTS
-do not match — ACK/MISS responses will be silently filtered by the listeners.
+do not match: ACK/MISS responses will be silently filtered by the listeners.
 
 Set config.nackAddr to the pod's fabric IPv6 (no CIDR suffix) for reliable
 operation. With networking.mode=multus, this should equal the address in

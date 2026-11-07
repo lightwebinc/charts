@@ -6,7 +6,7 @@ version: 0.7.10
 # appVersion MUST equal a tag published on ghcr.io/lightwebinc/shard-proxy
 # (the chart's tag:"" default pulls this). Images are published manually via the
 # binary repo's image-publish.yml workflow; bump appVersion ONLY in lockstep with
-# an image publish — binary git tags are NOT image tags until published.
+# an image publish: binary git tags are NOT image tags until published.
 appVersion: "1.42.0"
 kubeVersion: ">= 1.27.0-0"
 keywords:

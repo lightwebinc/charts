@@ -15,7 +15,7 @@ config:
   # Collapsed/mesh node: locally-emitted retransmits only reach the MFC (for
   # fan-out onto the fabric tunnels) when multicast loop is on.
   egressMulticastLoop: true
-  # NOTE: currently a no-op — the binary does not read EGRESS_HOPLIMIT yet.
+  # NOTE: currently a no-op: the binary does not read EGRESS_HOPLIMIT yet.
   # Raise the multicast hop limit at the host level if retransmits must
   # survive the first mesh/tunnel hop.
   egressHoplimit: 16

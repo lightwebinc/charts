@@ -4,7 +4,7 @@ Networking mode: {{ .Values.networking.mode }}
 {{- if eq .Values.networking.mode "multus" }}
   Multus NetworkAttachmentDefinition: {{ .Values.networking.multus.namespace }}/{{ .Values.networking.multus.networkName }}
   Fabric interface in pod: {{ .Values.networking.multus.interface }}
-  Fabric IPv6 (per-pod): {{ if .Values.networking.multus.fabricIPv6 }}{{ .Values.networking.multus.fabricIPv6 }}{{ else }}<UNSET — set networking.multus.fabricIPv6>{{ end }}
+  Fabric IPv6 (per-pod): {{ if .Values.networking.multus.fabricIPv6 }}{{ .Values.networking.multus.fabricIPv6 }}{{ else }}<UNSET: set networking.multus.fabricIPv6>{{ end }}
 {{- else if eq .Values.networking.mode "host" }}
   hostNetwork enabled. MULTICAST_IF on host: {{ .Values.config.multicastIf }}
 {{- else if eq .Values.networking.mode "unicast" }}

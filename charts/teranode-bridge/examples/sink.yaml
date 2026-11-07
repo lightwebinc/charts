@@ -2,13 +2,13 @@
 #
 #   helm install burn-in . -f examples/sink.yaml
 #
-# A valid, useful deployment — not a degraded one. Use it to burn in a delivery
+# A valid, useful deployment: not a degraded one. Use it to burn in a delivery
 # slot before a cluster exists, or to separate object-plane faults from
 # cluster-side ones: the lanes still run and still enforce framing, so
 # `lane stats dropped` still catches a sender writing malformed objects or two
 # classes crossed onto one lane.
 #
-# No propagation, no Kafka, no advertise, no reverse path — and the chart renders
+# No propagation, no Kafka, no advertise, no reverse path, and the chart renders
 # no retrieval Service, because there are no pulls to serve.
 config:
   mode: sink

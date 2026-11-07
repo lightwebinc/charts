@@ -3,8 +3,8 @@
 {{- /* Arcade's submit address. Arcade's propagation POSTs /txs to whatever its
        datahub_urls lists, so point that list at this Service (or, under
        networking.mode=host, at the node address the facade binds). Rendered
-       only when the facade actually starts — edgeIngress set and mode != sink,
-       the binary's own condition — so the Service can never name a listener
+       only when the facade actually starts: edgeIngress set and mode != sink,
+       the binary's own condition: so the Service can never name a listener
        the process does not open. */ -}}
 apiVersion: v1
 kind: Service

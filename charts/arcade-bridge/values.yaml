@@ -3,7 +3,7 @@
 # The binary is FLAG-ONLY (no env fallback, no config file) so the Deployment
 # renders `args:` from `config` below. Empty string / 0 / "0s" / false are
 # OMITTED from the arg vector so the binary's own default applies. Anything not
-# modelled here goes verbatim into extraArgs.
+# modeled here goes verbatim into extraArgs.
 #
 # TWO EXCEPTIONS render unconditionally, because for them the zero value MEANS
 # something the omitted form can never express (omission = "use the binary
@@ -90,7 +90,7 @@ config:
   # terminates it. Two bridges cannot bind these on one host, which is
   # deliberate. A co-located Arcade + Teranode site runs ONE delivery slot into
   # a local tee and the bridges move to distinct loopback ports behind it (see
-  # the binary repo's docs/deliver-once.md).
+  # bsv-multicast docs/deliver-once.md).
   # [::] accepts on whatever address the delivery side reaches this pod on; pin
   # to a specific address once the deployment has settled.
   subtreeListen: "[::]:9143" # -subtree-listen BRC-143 push frames
@@ -211,7 +211,7 @@ config:
   # binary default [::]:9167 would apply).
   metricsAddr: "[::]:9167"
 
-# Appended verbatim after every rendered flag, for what is not modelled above.
+# Appended verbatim after every rendered flag, for what is not modeled above.
 # It can also override: a repeated flag takes the LAST value. Overriding this
 # way hides the real value from `helm get values`, so prefer the key.
 extraArgs: []

@@ -75,7 +75,7 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- /* The distroless image has no shell, and the binary is the
-                 entrypoint — flags are the whole configuration surface. */}}
+                 entrypoint: flags are the whole configuration surface. */}}
           args:
             {{- include "arcade-bridge.args" . | trim | nindent 12 }}
           {{- with .Values.extraEnv }}

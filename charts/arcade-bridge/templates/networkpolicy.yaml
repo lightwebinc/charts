@@ -1,7 +1,7 @@
 {{- if .Values.networkPolicy.enabled }}
 {{- /* Four ports, four audiences, four rules: the delivery side reaches the
        lanes, merkle-service reaches the retrieval plane, Arcade reaches the
-       facade, Prometheus reaches metrics. Fail-closed — an empty `from` for a
+       facade, Prometheus reaches metrics. Fail-closed: an empty `from` for a
        rule admits no peer on that port. Under networking.mode=host this policy
        matches nothing that matters: host traffic never enters the pod network,
        so the node firewall is the real control. */ -}}

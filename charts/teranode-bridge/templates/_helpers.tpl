@@ -42,7 +42,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
 {{/*
-port — the port a listen address binds, so containerPort/Service port can never
+port: the port a listen address binds, so containerPort/Service port can never
 drift from the flag the process actually gets. Input is the raw listen string
 ("[::]:8725", "192.0.2.10:9145", ":9146"); output is the trailing number.
 */}}
@@ -50,13 +50,13 @@ drift from the flag the process actually gets. Input is the raw listen string
 {{- $addr := . | toString -}}
 {{- $p := regexFind "[0-9]+$" $addr -}}
 {{- if not $p -}}
-{{- fail (printf "teranode-bridge: cannot derive a port from listen address %q — it must end in :<port>" $addr) -}}
+{{- fail (printf "teranode-bridge: cannot derive a port from listen address %q: it must end in :<port>" $addr) -}}
 {{- end -}}
 {{- $p -}}
 {{- end -}}
 
 {{/*
-apiPrefix / announceUrl — the URL the cluster is told to pull from, built the
+apiPrefix / announceUrl: the URL the cluster is told to pull from, built the
 same way the binary builds it: TrimRight(advertise, "/") + "/" + trim(prefix).
 This is the value that silently breaks subtree and block ingest when wrong, so
 NOTES.txt prints it and validate rejects the doubled form.
@@ -70,7 +70,7 @@ NOTES.txt prints it and validate rejects the doubled form.
 {{- end -}}
 
 {{/*
-validate — install-time refusal for configurations that are wrong in a way the
+validate: install-time refusal for configurations that are wrong in a way the
 running process would not tell you about (or would only tell you by exiting 2
 into a crashloop). Warnings, not failures, live in NOTES.txt.
 */}}
@@ -97,12 +97,12 @@ into a crashloop). Warnings, not failures, live in NOTES.txt.
 {{- $adv := trimSuffix "/" ($c.advertise | default "") -}}
 {{- $prefix := include "teranode-bridge.apiPrefix" . -}}
 {{- if and $adv (hasSuffix $prefix $adv) -}}
-{{- fail (printf "teranode-bridge: config.advertise (%q) already ends with config.apiPrefix (%q). The announced URL is advertise + apiPrefix, so this announces %q — the cluster's subtree and block pulls would 404 against a doubled path while every announcement kept succeeding. Drop the prefix from config.advertise." $adv $prefix (printf "%s%s" $adv $prefix)) -}}
+{{- fail (printf "teranode-bridge: config.advertise (%q) already ends with config.apiPrefix (%q). The announced URL is advertise + apiPrefix, so this announces %q: the cluster's subtree and block pulls would 404 against a doubled path while every announcement kept succeeding. Drop the prefix from config.advertise." $adv $prefix (printf "%s%s" $adv $prefix)) -}}
 {{- end -}}
 {{- /* Announcements exist only where brokers do: subtreeTopic/blockTopic carry
        non-empty defaults, so they say nothing about whether anything announces. */ -}}
 {{- if and (not $sink) $c.kafka (not $c.peerId) -}}
-{{- fail "teranode-bridge: config.peerId is empty while announcements are configured. Empty is UNSAFE: the cluster's catchup substitutes the announce URL for a missing peer id, targets this bridge's retrieval plane for the header chain, 404s, and circuit-breaks itself out of recovery (verified live at teranode 1cca625 — a node wedged 300+ blocks behind a healthy peer). Set config.peerId to a SYNTHETIC valid-format libp2p id (12D3KooW…) derived from a fresh ed25519 key and registered nowhere: the catchup gate then diverts chain sync to real libp2p peers while every delivery gate (bans only) keeps pulling objects from the bridge. Give each bridge instance its own id and never reuse a real peer's." -}}
+{{- fail "teranode-bridge: config.peerId is empty while announcements are configured. Empty is UNSAFE: the cluster's catchup substitutes the announce URL for a missing peer id, targets this bridge's retrieval plane for the header chain, 404s, and circuit-breaks itself out of recovery (verified live at teranode 1cca625: a node wedged 300+ blocks behind a healthy peer). Set config.peerId to a SYNTHETIC valid-format libp2p id (12D3KooW…) derived from a fresh ed25519 key and registered nowhere: the catchup gate then diverts chain sync to real libp2p peers while every delivery gate (bans only) keeps pulling objects from the bridge. Give each bridge instance its own id and never reuse a real peer's." -}}
 {{- end -}}
 {{- if and $c.peerId (not (regexMatch "^12D3KooW[1-9A-HJ-NP-Za-km-z]{44}$" $c.peerId)) -}}
 {{- fail (printf "teranode-bridge: config.peerId (%q) is not a valid-format ed25519 libp2p peer id (12D3KooW + 44 base58 chars). An undecodable id is diverted for the wrong reason and pollutes the cluster's logs with decode errors; derive a real one: ed25519 pub -> protobuf 08011220||pub -> multihash 0024||… -> base58btc." $c.peerId) -}}
@@ -112,18 +112,18 @@ into a crashloop). Warnings, not failures, live in NOTES.txt.
 {{- fail "teranode-bridge: config.blockchain enables the reverse path, which also requires config.localAsset and config.edgeIngress. The binary exits 2 on the incomplete set, so this would be a crashloop rather than a running bridge." -}}
 {{- end -}}
 {{- if and $c.submitter (gt (int .Values.replicaCount) 1) -}}
-{{- fail (printf "teranode-bridge: replicaCount is %d with the reverse path enabled and config.submitter true. Exactly ONE bridge per class per cluster may hold the submitter role — %d of them would publish every locally produced subtree and block onto the object plane %d times over. Run the submitter as its own single-replica release and set config.submitter=false on any scaled-out pull tier (which stays a hot spare: promotion is a flag flip and a restart)." (int .Values.replicaCount) (int .Values.replicaCount) (int .Values.replicaCount)) -}}
+{{- fail (printf "teranode-bridge: replicaCount is %d with the reverse path enabled and config.submitter true. Exactly ONE bridge per class per cluster may hold the submitter role: %d of them would publish every locally produced subtree and block onto the object plane %d times over. Run the submitter as its own single-replica release and set config.submitter=false on any scaled-out pull tier (which stays a hot spare: promotion is a flag flip and a restart)." (int .Values.replicaCount) (int .Values.replicaCount) (int .Values.replicaCount)) -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
-flag — render one CLI flag from a values key.
+flag: render one CLI flag from a values key.
   bool true            -> "-name"        (bare)
   bool false / null    -> omitted        (binary default applies)
   "" / "0s" / 0        -> omitted        (binary default applies)
   anything else        -> "-name=value"
-Flags whose ZERO VALUE MEANS SOMETHING cannot go through here — omission would
+Flags whose ZERO VALUE MEANS SOMETHING cannot go through here: omission would
 silently restore the binary's non-zero default. Those are written out
 unconditionally in .args below.
 */}}
@@ -146,7 +146,7 @@ unconditionally in .args below.
 {{- end -}}
 
 {{/*
-listFlag — a repeatable flag, one occurrence per element. The binary also
+listFlag: a repeatable flag, one occurrence per element. The binary also
 accepts a comma-separated value, but one flag per endpoint keeps `kubectl
 describe pod` readable and keeps `--set` free of comma escaping.
 */}}
@@ -160,7 +160,7 @@ describe pod` readable and keeps `--set` free of comma escaping.
 {{- define "teranode-bridge.args" -}}
 {{- $c := .Values.config -}}
 {{- $sink := eq ($c.mode | default "all") "sink" -}}
-{{/* Delivery lanes — the only plane a sink runs */}}
+{{/* Delivery lanes: the only plane a sink runs */}}
 {{- include "teranode-bridge.flag" (dict "name" "tx-listen" "v" $c.txListen) -}}
 {{- include "teranode-bridge.flag" (dict "name" "subtree-listen" "v" $c.subtreeListen) -}}
 {{- include "teranode-bridge.flag" (dict "name" "block-listen" "v" $c.blockListen) -}}
@@ -201,7 +201,7 @@ describe pod` readable and keeps `--set` free of comma escaping.
 {{- include "teranode-bridge.flag" (dict "name" "blockchain-cert" "v" $c.blockchainCert) -}}
 {{- include "teranode-bridge.flag" (dict "name" "blockchain-key" "v" $c.blockchainKey) -}}
 {{- /* Keepalive: grpc-go pings NEVER by default, so omission is not a benign
-       default — it is the wedge. Rendered explicitly in both directions. */ -}}
+       default: it is the wedge. Rendered explicitly in both directions. */ -}}
 {{- $ka := "30s" -}}
 {{- if and (not (kindIs "invalid" $c.blockchainKeepalive)) (ne ($c.blockchainKeepalive | toString) "") }}{{ $ka = ($c.blockchainKeepalive | toString) }}{{ end }}
 - {{ printf "-blockchain-keepalive=%s" $ka | quote }}
@@ -265,7 +265,7 @@ describe pod` readable and keeps `--set` free of comma escaping.
 - "-tracing-enabled=true"
 {{- include "teranode-bridge.flag" (dict "name" "tracing-collector-url" "v" .Values.tracing.collectorUrl) -}}
 {{- /* The generic flag helper renders numbers through int64, which would turn
-       a 0.01 sample rate into 0 — and 0 is itself a MEANINGFUL rate (sample
+       a 0.01 sample rate into 0, and 0 is itself a MEANINGFUL rate (sample
        nothing), so it cannot be dropped as a zero value either. Render it
        explicitly, as a float, whenever tracing is on. */ -}}
 {{- $rate := 0.01 -}}
@@ -286,7 +286,7 @@ describe pod` readable and keeps `--set` free of comma escaping.
 
 
 {{/*
-tunnelScript — what the WireGuard sidecar runs. The provisioned wg-quick file
+tunnelScript: what the WireGuard sidecar runs. The provisioned wg-quick file
 is copied out of the Secret into a tmpfs (mode 0600, named after the
 interface, which is what wg-quick requires) with two edits: a DNS= line is
 dropped, because the pod keeps the cluster's resolver and wg-quick would
@@ -346,7 +346,7 @@ while :; do sleep 3600 & wait $!; done
 {{- end -}}
 
 {{/*
-tunnelContainer — the sidecar itself. Rendered under initContainers with
+tunnelContainer: the sidecar itself. Rendered under initContainers with
 restartPolicy: Always (a native sidecar) or under containers, by the caller.
 */}}
 {{- define "teranode-bridge.tunnelContainer" -}}

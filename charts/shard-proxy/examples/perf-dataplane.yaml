@@ -18,7 +18,7 @@ networking:
     interface: net1
 
 config:
-  # SSM default: bind a distinct source IPv6 per replica — use the pod's fabric
+  # SSM default: bind a distinct source IPv6 per replica: use the pod's fabric
   # address (doc-safe placeholder here; set per release).
   bindSource: "2001:db8::42"
 

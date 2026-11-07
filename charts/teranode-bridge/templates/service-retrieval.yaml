@@ -2,7 +2,7 @@
 {{- if ne ($c.mode | default "all") "sink" }}
 {{- /* The pull-back address. Teranode fetches every announced subtree and block
        from whatever config.advertise names, so that value and this Service must
-       resolve to the same place — a Service of its own keeps the cluster-facing
+       resolve to the same place: a Service of its own keeps the cluster-facing
        exposure independent of the delivery-facing one, and gives the address
        something stable to be. mode=sink serves no pulls, so it gets no
        Service. */ -}}

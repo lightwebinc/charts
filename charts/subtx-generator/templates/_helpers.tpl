@@ -56,7 +56,7 @@ k8s.v1.cni.cncf.io/networks: |
 {{- end -}}
 
 {{/*
-emitFlag — render a single CLI flag, honoring zero/empty defaults.
+emitFlag: render a single CLI flag, honoring zero/empty defaults.
 Receives a dict with keys:
   name: the kebab-case flag (without leading dash)
   v:    the value (any type)
@@ -87,7 +87,7 @@ Receives a dict with keys:
 {{/*
 Container args (rendered as a YAML list) for the selected mode.
 Each (camelCase values key) → (kebab-case binary flag) mapping is explicit
-to avoid relying on regex backreference behaviour across Sprig versions.
+to avoid relying on regex backreference behavior across Sprig versions.
 */}}
 {{- define "subtx-generator.args" -}}
 {{/* Shared flags */}}

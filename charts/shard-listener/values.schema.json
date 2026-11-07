@@ -177,12 +177,12 @@
         },
         "requireBlockPow": {
           "type": "boolean",
-          "description": "REQUIRE_BLOCK_POW — gate BRC-131 block announces on header PoW and drop any deprecated standalone BRC-133 coinbase frame before fan-out. Default true (matches the binary); BRC-135 header egress is fed downstream of this gate."
+          "description": "REQUIRE_BLOCK_POW: gate BRC-131 block announces on header PoW and drop any deprecated standalone BRC-133 coinbase frame before fan-out. Default true (matches the binary); BRC-135 header egress is fed downstream of this gate."
         },
         "minPowBits": {
           "type": "string",
           "pattern": "^(0[xX][0-9a-fA-F]{1,8}|[0-9]{1,10})$",
-          "description": "MIN_POW_BITS — PoW difficulty floor for requireBlockPow in Bitcoin compact nBits. \"0\" = header self-consistency only (default). mainnet/testnet 0x1d00ffff, devnet 0x207fffff. Hex MUST carry the 0x prefix — a bare \"1d00ffff\" is parsed as decimal and fails at startup."
+          "description": "MIN_POW_BITS: PoW difficulty floor for requireBlockPow in Bitcoin compact nBits. \"0\" = header self-consistency only (default). mainnet/testnet 0x1d00ffff, devnet 0x207fffff. Hex MUST carry the 0x prefix, a bare \"1d00ffff\" is parsed as decimal and fails at startup."
         },
         "debug": {
           "type": "boolean"
