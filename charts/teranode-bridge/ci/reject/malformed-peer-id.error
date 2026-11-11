@@ -1,1 +1,1 @@
-config.peerId: Does not match pattern
+at '/config/peerId': 'not-a-peer-id' does not match pattern
