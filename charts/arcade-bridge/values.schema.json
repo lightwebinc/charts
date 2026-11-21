@@ -225,7 +225,7 @@
         "hydrateAsset": {
           "type": "string",
           "pattern": "^$|^https?://[^ ]+$",
-          "description": "Asset API base INCLUDING its prefix. Unlike advertise, this one is dialled exactly as given."
+          "description": "Asset API base INCLUDING its prefix. Unlike advertise, this one is dialed exactly as given."
         },
         "cacheBytes": {
           "type": "integer",

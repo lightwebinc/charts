@@ -244,7 +244,7 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 priorityClassName: ""
-# Optional RuntimeClass for specialised container runtimes. Empty = cluster default.
+# Optional RuntimeClass for specialized container runtimes. Empty = cluster default.
 runtimeClassName: ""
 topologySpreadConstraints: []
 
