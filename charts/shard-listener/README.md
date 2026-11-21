@@ -11,16 +11,19 @@ This repository packages templates, default values, JSON Schema validation, and 
 > The chart references `ghcr.io/lightwebinc/shard-listener:<appVersion>`: `appVersion` always tracks a published image tag (see the contract note in [`Chart.yaml`](Chart.yaml)).
 
 ```bash
-# DaemonSet over a labeled set of fabric nodes (recommended)
+# DaemonSet over a labeled set of fabric nodes (recommended). SSM default: at
+# least one bootstrap source list is required (here the shard-manifest source)
 helm install listener oci://ghcr.io/lightwebinc/charts/shard-listener \
   --version 0.8.4 -n bsv-mcast --create-namespace \
   --set workloadType=DaemonSet \
   --set 'nodeSelector.bsv-mcast/role=listener' \
-  --set config.retryEndpoints='[2001:db8::24]:9300\,[2001:db8::25]:9300\,[2001:db8::26]:9300'
+  --set config.retryEndpoints='[2001:db8::24]:9300\,[2001:db8::25]:9300\,[2001:db8::26]:9300' \
+  --set 'config.ssmBootstrap.manifest={2001:db8::10}'
 
-# Single-replica Deployment
+# Single-replica Deployment (lab/dev: the ASM fallback needs no bootstrap sources)
 helm install listener . -n bsv-mcast --create-namespace \
-  --set networking.mode=host
+  --set networking.mode=host \
+  --set config.sourceMode=asm
 ```
 
 ## Workload type
@@ -46,7 +49,7 @@ The chart ships hardened pod-level defaults: `resources` requests/limits (per no
 
 See [`values.yaml`](values.yaml). Most flags accepted by the listener binary are exposed under `.config`; the NACK tail-probe family (`-nack-backoff-base`, `-nack-tail-probe*`, `-nack-max-flows`, `-nack-max-forward-jump`), `-rebucket-relay`, `-retry-tee` (`RETRY_TEE`, receive-side mirror to a co-resident retry-endpoint `-tee-listen`), `-control-group-compat`, `-manifest-beacon-port`, `-reassembly-ttl` and `-reassembly-max-age` are settable via `extraEnv` (all honored by the default appVersion; on an older `image.tag` pin `-nack-tail-probe*` requires ≥ 1.15.0, `-rebucket-relay` ≥ 1.10.1 and `-retry-tee` ≥ 1.24.1). Exposed under `.config`:
 
-- `config.mode`: P3b role split (`collapsed`|`receiver`|`delivery`; requires appVersion ≥ 1.6.9) and `config.deliveryAddrs`: receiver-mode delivery fan-out target set (requires appVersion ≥ 1.7.0)
+- `config.mode`: role split (`collapsed`|`receiver`|`delivery`; requires appVersion ≥ 1.6.9) and `config.deliveryAddrs`: receiver-mode delivery fan-out target set (requires appVersion ≥ 1.7.0)
 - Multicast egress / domain bridging
 - Block header egress: BRC-135 frames emitted from BRC-131 announcements (unicast + multicast)
 - Block control-plane PoW gate: `config.requireBlockPow` (default `true`) + `config.minPowBits` (see below)
@@ -55,7 +58,7 @@ See [`values.yaml`](values.yaml). Most flags accepted by the listener binary are
 - Cross-listener TxID dedup via a modular cache backend (see below)
 - Sender allow/deny CIDR lists
 - Beacon-driven retry endpoint discovery (BRC-126)
-- SSM (RFC 4607) opt-in: `config.sourceMode=ssm` + per-control-group bootstrap source lists
+- SSM (RFC 4607), the chart default (`config.sourceMode: ssm`): per-control-group bootstrap source lists
 - Unified logging: `config.logFormat` (`text`|`json`) → `LOG_FORMAT`, `config.logLevel` → `LOG_LEVEL`, `config.traceSampling` (`0`–`1`) → `TRACE_SAMPLING` (schema-validated). Set `logFormat: json` for fleet aggregation; level is runtime-togglable via `POST /loglevel` + SIGHUP. See the [unified logging contract](https://github.com/lightwebinc/shard-common/blob/main/docs/logging.md).
 
 ### Block PoW gate (default ON)

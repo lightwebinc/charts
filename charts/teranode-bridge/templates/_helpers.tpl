@@ -226,7 +226,7 @@ describe pod` readable and keeps `--set` free of comma escaping.
 {{- include "teranode-bridge.flag" (dict "name" "tx-linger" "v" $c.txLinger) -}}
 {{- include "teranode-bridge.flag" (dict "name" "tx-inflight" "v" $c.txInflight) -}}
 {{- include "teranode-bridge.flag" (dict "name" "tx-builders" "v" $c.txBuilders) -}}
-{{- /* 0 = retries OFF; omission would restore the binary's 3 */ -}}
+{{- /* 0 = retries OFF; omission would restore the binary's 6 */ -}}
 {{- $retries := 3 -}}
 {{- if not (kindIs "invalid" $c.txRetries) }}{{ $retries = int64 $c.txRetries }}{{ end }}
 - {{ printf "-tx-retries=%d" $retries | quote }}

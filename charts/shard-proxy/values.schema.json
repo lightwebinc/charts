@@ -314,7 +314,7 @@
       },
       "allOf": [
         {
-          "$comment": "sourceMode=ssm requires a per-replica bindSource \u2014 the binary refuses SSM without one and fails fast at startup. Not schema-enforced: the chart's own defaults ship ssm with bindSource empty (set per replica at install)."
+          "$comment": "sourceMode=ssm requires a per-replica bindSource: the binary refuses SSM without one and fails fast at startup. Not schema-enforced: the chart's own defaults ship ssm with bindSource empty (set per replica at install)."
         }
       ]
     }

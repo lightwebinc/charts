@@ -92,12 +92,12 @@ config:
   beefTopics: ""
   beefGroups: ""
   beefShardBits: 0
-  beefMaxObjectBytes: 1048576  # D9 bound; MUST be >= the largest object any ingress admits
+  beefMaxObjectBytes: 1048576  # reassembly bound; MUST be >= the largest object any ingress admits
   beefVersions: ""
   beefVerifyContent: false
   subtreeExclude: ""
 
-  # Role split (P3b): collapsed (default; join fabric (S,G) + gap/NACK + fan-out)
+  # Role split: collapsed (default; join fabric (S,G) + gap/NACK + fan-out)
   # | receiver (mcast half) | delivery (consumer half: unicast-ingest + fan-out,
   # NO mcast join, NO gap/NACK: receives raw frames from a receiver over unicast).
   mode: "collapsed"
@@ -206,7 +206,7 @@ config:
 
   # Courtesy SETNX into the local proxy's ingress namespace so the proxy
   # knows a TxID is already on the multicast network. Prefix MUST match
-  # the proxy chart's config.txidDedupPrefix exactly. Leave the backend at
+  # the proxy chart's config.txidDedup.prefix exactly. Leave the backend at
   # none (and ingressSetRedisAddr empty) to disable. The two stores are
   # addressed independently: either may use a different backend/endpoint.
   ingressSetBackend: ""
