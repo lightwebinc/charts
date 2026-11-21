@@ -88,7 +88,7 @@ a wrong value breaks nothing that reports an error:
 > announce count climbs · no log line, no failed metric
 
 Worse than silence: every failed fetch charges the bridge's **fetch-health breaker** entry in
-merkle-service, keyed by `config.peerId`, so a wrong address actively penalises the peer it names.
+merkle-service, keyed by `config.peerId`, so a wrong address actively penalizes the peer it names.
 
 Rules:
 
@@ -140,7 +140,7 @@ The object cache is **in-process, and every announcement names this release's re
 A pushed subtree lives only on the bridge that received it. Put N replicas behind one retrieval
 Service and `(N-1)/N` of merkle-service's fetches land on a replica that never saw the object: an
 honest `404`, and merkle-service's per-peer fetch-health breaker charges the announced
-`config.peerId` for every one, penalising the whole set for the topology mistake. The chart warns
+`config.peerId` for every one, penalizing the whole set for the topology mistake. The chart warns
 on `replicaCount > 1`.
 
 Scale by adding **releases**, each with its own `config.advertise` and its own `peerId`. For the

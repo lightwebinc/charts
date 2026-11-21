@@ -14,14 +14,16 @@ The chart packages a single multi-binary image and selects the binary via `.Valu
 |---|---|---|
 | `subtx-gen` (default) | `/usr/local/bin/subtx-gen` | BRC-124/BRC-128 traffic generator |
 | `send-anchor-frame` | `/usr/local/bin/send-anchor-frame` | BRC-134 anchor tx sender |
-| `send-block-announce` | `/usr/local/bin/send-block-announce` | BRC-131 block + coinbase announcements (TCP) |
-| `send-subtree-data` | `/usr/local/bin/send-subtree-data` | BRC-132 subtree data sender (TCP) |
+| `send-block-announce` | `/usr/local/bin/send-block-announce` | BRC-131 block + coinbase announcements (TCP; legacy) |
+| `send-subtree-data` | `/usr/local/bin/send-subtree-data` | BRC-132 subtree data sender (TCP; legacy) |
 | `send-subtree-push` | `/usr/local/bin/send-subtree-push` | BRC-143 subtree push → proxy lane 8726 |
 | `send-block-push` | `/usr/local/bin/send-block-push` | BRC-144 block push → proxy lane 8727 |
 
+`send-block-announce` and `send-subtree-data` are legacy: the proxy's transaction ports drop the privileged frames they send (see [Miner port deprecation](https://github.com/lightwebinc/shard-proxy/blob/main/docs/configuration.md#ingress-is-transaction-only-miner-port-deprecated)); use `send-subtree-push` and `send-block-push`. Both push ports on the proxy are off by default: in the shard-proxy chart, restrict who may reach the push port (with `networkPolicy.enabled`, list the permitted peers in `networkPolicy.pushIngressFrom`: the chart refuses to render an empty list with a push port set; on Multus or host networking the fabric firewall or provider ACL restricts it), set `config.subtreeListenPort` (8726) or `config.blockListenPort` (8727), then point this chart's `args.addr` at that port.
+
 The `send-subtree-push` / `send-block-push` binaries are packaged in images built from `v0.2.10` on: the chart's default image (`appVersion`) includes them, along with `tunnel-sink`. Only an older explicit `image.tag` pin lacks them.
 
-The binaries are configured by **CLI flags**; the only environment variable they read is `LOG_FORMAT` (rendered from `logFormat`). The chart translates the matching `*Args` block from `values.yaml` into the container's `command` and `args`. Zero / empty values are omitted so the binary defaults apply. Boolean `false` is likewise omitted, so flags whose binary default is `true` (`sendBlockAnnounce.coinbase`, `sendSubtreePush.coinbasePlaceholder`) cannot be disabled through the chart.
+The binaries are configured by **CLI flags**; the only environment variable they read is `LOG_FORMAT` (rendered from `logFormat`). The chart translates `args` and the per-mode block matching `mode` (`subtxGen`, `sendAnchorFrame`, ...) from `values.yaml` into the container's `command` and `args`. Zero / empty values are omitted so the binary defaults apply. Boolean `false` is likewise omitted, so flags whose binary default is `true` (`sendBlockAnnounce.coinbase`, `sendSubtreePush.coinbasePlaceholder`) cannot be disabled through the chart.
 
 ## Install
 

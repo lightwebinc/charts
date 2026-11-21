@@ -4,7 +4,13 @@
 # taint; pin with nodeSelector as needed.
 #
 #   helm install retry-node-1 . -f examples/collapsed-node.yaml \
-#     --set config.nackAddr=2001:db8::24
+#     --set config.nackAddr=2001:db8::24 \
+#     --set config.bindSource=2001:db8::24 \
+#     --set 'config.ssmBootstrap.manifest={2001:db8::10}'
+#
+# The bootstrap list is required under the default sourceMode ssm: the binary
+# refuses to start without one (or ssmPublishersStatic). bindSource is the
+# address SSM listeners pre-declare this endpoint's beacons against.
 networking:
   mode: host
   host:
