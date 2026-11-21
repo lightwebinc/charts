@@ -11,9 +11,15 @@ This repository packages templates, default values, JSON Schema validation, and 
 > The chart references `ghcr.io/lightwebinc/retry-endpoint:<appVersion>`: `appVersion` always tracks a published image tag (see the contract note in [`Chart.yaml`](Chart.yaml)).
 
 ```bash
+# SSM default: bindSource is the pod's fabric IPv6, and at least one bootstrap
+# source list is required (here the shard-manifest source); see SSM below
 helm install retry-node-1 oci://ghcr.io/lightwebinc/charts/retry-endpoint \
   --version 0.5.7 -n bsv-mcast --create-namespace \
+  --set networking.multus.fabricIPv6=2001:db8::24/64 \
   --set config.nackAddr=2001:db8::24 \
+  --set config.bindSource=2001:db8::24 \
+  --set config.egressIface=net1 \
+  --set 'config.ssmBootstrap.manifest={2001:db8::10}' \
   --set 'nodeSelector.bsv-mcast/node=retry-1'
 ```
 
@@ -29,7 +35,7 @@ In `multus` mode, set `config.nackAddr` to the per-pod fabric IPv6 from `network
 
 ### `config.egressIface` vs `config.mcIface`
 
-The receive iface (`config.mcIface` → `MC_IFACE`, where the endpoint joins the multicast group) and the retransmission **egress** iface (`config.egressIface` → comma-separated NIC list) now default **separately**. On a single-NIC node both stay `eth0`; on a collapsed/multi-NIC edge the retransmit may leave a different interface than the one it receives on, so set `config.egressIface` explicitly rather than assuming it tracks `mcIface`.
+The receive iface (`config.mcIface` → `MC_IFACE`, where the endpoint joins the multicast group) and the retransmission **egress** iface (`config.egressIface` → comma-separated NIC list) now default **separately**. On a single-NIC node both stay `eth0`; on a collapsed/multi-NIC edge the retransmit may leave a different interface than the one it receives on, so set `config.egressIface` explicitly rather than assuming it tracks `mcIface`. In `multus` mode `MC_IFACE` follows `networking.multus.interface`, but `EGRESS_IFACE` stays at `config.egressIface` (default `eth0`, the pod's primary CNI interface): set it to the fabric interface (`net1`) there, or retransmits and beacons leave on the pod network.
 
 ### Cache backend (optional)
 
@@ -56,10 +62,11 @@ On a collapsed node, one that runs the multicast routing stack and a co-resident
 
 ```sh
 helm install retry-node-1 . -f examples/collapsed-node.yaml \
-  --set config.nackAddr=<pod fabric IPv6>
+  --set config.nackAddr=<pod fabric IPv6> \
+  --set 'config.ssmBootstrap.manifest={<shard-manifest source IPv6>}'
 ```
 
-`config.nackAddr` stays required (see above); on a multi-NIC edge also set `config.egressIface` to the retransmission NIC when it differs from `config.mcIface`. Note that `config.egressHoplimit` is currently a **no-op** (the binary does not read `EGRESS_HOPLIMIT`): raise the multicast hop limit at the host level if retransmits must cross a mesh/tunnel hop.
+`config.nackAddr` stays required (see above), and so does a bootstrap source list under the default `sourceMode: ssm` (see [SSM](#ssm-source-specific-multicast)); on a multi-NIC edge also set `config.egressIface` to the retransmission NIC when it differs from `config.mcIface`. Note that `config.egressHoplimit` is currently a **no-op** (the binary does not read `EGRESS_HOPLIMIT`): raise the multicast hop limit at the host level if retransmits must cross a mesh/tunnel hop.
 
 ## Values reference
 
@@ -69,14 +76,14 @@ The chart ships hardened pod-level defaults: `resources` requests/limits (size m
 
 See [`values.yaml`](values.yaml). Most flags accepted by the binary are exposed under `.config`; `-rl-sender-rate`/`-rl-sender-window`, `-tee-listen` (`TEE_LISTEN`, loopback frame mirror from a co-resident proxy/listener `-retry-tee`), `-mc-join-enabled` (`MC_JOIN_ENABLED`, `false` = tee-only ingest, requires `TEE_LISTEN`), `-control-group-compat`, the `-ingress-*` sizing flags (`-ingress-procs` and `-ingress-queue-depth` need image >= 1.15.0) and `-cache-max-bytes` (image >= 1.16.0) are settable via `extraEnv`. Exposed under `.config`:
 
-- Per-FrameVer cache TTLs (tx / block / subtree / anchor)
+- Per-FrameVer cache TTLs (tx / block / subtree / anchor / BEEF)
 - The rate-limit tiers (IP / sequence / chain / group; `sender` is an alias for chain), plus the opt-in THROTTLED backoff reply: `config.rlThrottleResponse` → `RL_THROTTLE_RESPONSE`
 - BRC-126 beacon: tier, preference, interval, scope, flags
 - ACK/MISS response suppression
 - BRC-132 subtree data caching
 - OpenTelemetry OTLP push
 - Unified logging: `config.logFormat` (`text`|`json`) → `LOG_FORMAT`, `config.logLevel` → `LOG_LEVEL`, `config.traceSampling` (`0`–`1`) → `TRACE_SAMPLING` (schema-validated); runtime `/loglevel` + SIGHUP. See the [unified logging contract](https://github.com/lightwebinc/shard-common/blob/main/docs/logging.md).
-- SSM (RFC 4607) opt-in: `config.sourceMode=ssm` + `config.bindSource` + per-control-group bootstrap
+- SSM (RFC 4607), the chart default (`config.sourceMode: ssm`): `config.bindSource` + per-control-group bootstrap
 - NACK proxying (cross-domain recovery) opt-in: `config.proxyEnabled=true` + `config.upstreamRetryEndpoints` (recovers cache misses from an upstream endpoint and re-serves this domain). See [BRC-126](https://github.com/lightwebinc/bsv-multicast/blob/main/docs/brc-126-retransmission-protocol.md).
 
 ### SSM (Source-Specific Multicast)
