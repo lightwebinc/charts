@@ -63,10 +63,11 @@ On a collapsed node, one that runs the multicast routing stack and a co-resident
 ```sh
 helm install retry-node-1 . -f examples/collapsed-node.yaml \
   --set config.nackAddr=<pod fabric IPv6> \
+  --set config.bindSource=<pod fabric IPv6> \
   --set 'config.ssmBootstrap.manifest={<shard-manifest source IPv6>}'
 ```
 
-`config.nackAddr` stays required (see above), and so does a bootstrap source list under the default `sourceMode: ssm` (see [SSM](#ssm-source-specific-multicast)); on a multi-NIC edge also set `config.egressIface` to the retransmission NIC when it differs from `config.mcIface`. Note that `config.egressHoplimit` is currently a **no-op** (the binary does not read `EGRESS_HOPLIMIT`): raise the multicast hop limit at the host level if retransmits must cross a mesh/tunnel hop.
+`config.nackAddr` stays required (see above), and so does a bootstrap source list under the default `sourceMode: ssm` (see [SSM](#ssm-source-specific-multicast)); set `config.bindSource` to the same address, since SSM listeners pre-declare this endpoint's beacons against it; on a multi-NIC edge also set `config.egressIface` to the retransmission NIC when it differs from `config.mcIface`. Note that `config.egressHoplimit` is currently a **no-op** (the binary does not read `EGRESS_HOPLIMIT`): raise the multicast hop limit at the host level if retransmits must cross a mesh/tunnel hop.
 
 ## Values reference
 

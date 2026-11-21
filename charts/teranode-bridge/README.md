@@ -137,7 +137,7 @@ Softer problems (empty `advertise`/`propagation`/`kafka`, an empty `mineTag` wit
 
 ## Values reference
 
-See [`values.yaml`](values.yaml) for the full annotated reference: every flag in [`teranode-bridge/docs/configuration.md`](https://github.com/lightwebinc/teranode-bridge/blob/main/docs/configuration.md) is reachable from `.config`, except the standby-promotion trio (`-submitter-probe`, `-submitter-grace`, `-submitter-when-blind`), `-tx-queue`, `-tx-cache-bytes`, `-drain-timeout` and `-mode tx`, which go through `extraArgs`.
+See [`values.yaml`](values.yaml) for the full annotated reference: every flag in [`teranode-bridge/docs/configuration.md`](https://github.com/lightwebinc/teranode-bridge/blob/main/docs/configuration.md) is reachable from `.config`, except the standby-promotion trio (`-submitter-probe`, `-submitter-grace`, `-submitter-when-blind`), `-tx-queue`, `-tx-cache-bytes`, `-drain-timeout` and `-mode=tx`, which go through `extraArgs`. `-mode=tx` carries the transaction lane only: clear `config.blockchain` with it, since the binary refuses `-blockchain` in that mode and exits.
 
 ### Flags whose zero value means something
 
