@@ -41,7 +41,7 @@ For HA ingress, run the proxy as a `hostNetwork` pod on the tainted data-plane p
 helm install sp . -f examples/anycast-ingress.yaml
 ```
 
-Division of labour (the chart stays out of the hot path):
+Division of labor (the chart stays out of the hot path):
 
 | Concern | Owner |
 |---|---|
