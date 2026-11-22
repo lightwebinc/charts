@@ -1,6 +1,7 @@
 # The key Secret is mounted and named on the command line; the tunnel volumes stay.
 + "-blockchain-api-key-file=/etc/teranode-bridge/blockchain/api-key"
-+ secretName: teranode-api-key
++ secretName: "teranode-api-key"
++ - key: "api-key"
 + mountPath: /etc/teranode-bridge/blockchain
 + name: wireguard-secret
 + "-submitter-grace=60s"

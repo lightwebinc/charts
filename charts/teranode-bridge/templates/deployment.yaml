@@ -174,10 +174,10 @@ spec:
         {{- /* 0440 and the pod's fsGroup: the bridge runs as a non-root uid. */}}
         - name: blockchain-api-key
           secret:
-            secretName: {{ .Values.config.blockchainApiKeySecret.name }}
+            secretName: {{ .Values.config.blockchainApiKeySecret.name | quote }}
             defaultMode: 0440
             items:
-              - key: {{ .Values.config.blockchainApiKeySecret.key | default "api-key" }}
+              - key: {{ .Values.config.blockchainApiKeySecret.key | default "api-key" | quote }}
                 path: api-key
         {{- end }}
       {{- end }}

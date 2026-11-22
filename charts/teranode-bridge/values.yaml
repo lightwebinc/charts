@@ -319,7 +319,8 @@ config:
   # demotes when it returns. Empty = not passed.
   submitterProbe: ""
   # -submitter-grace: after start, wait this long before the reverse path may
-  # publish (the registry starts empty). Empty = not passed (binary default 45s).
+  # publish (the registry starts empty); "0s" = no grace. Empty = not passed
+  # (binary default 45s).
   submitterGrace: ""
   # -submitter-when-blind: publish even while no delivery lane is connected.
   # Unsafe unless this cluster is the only publisher. false = not passed.
@@ -364,7 +365,8 @@ config:
   # forever while delivery, announce and retrieval keep working. Read only from a
   # Secret you create out of band, mounted read-only into the pod:
   #   kubectl create secret generic <name> --from-file=api-key=./grpc_admin_api_key
-  # Empty name: nothing is mounted and the flag is not passed.
+  # Empty name: nothing is mounted and the flag is not passed. Needs
+  # teranode-bridge 0.13.0 or later (an older image exits on the unknown flag).
   blockchainApiKeySecret:
     name: ""
     key: "api-key" # key within the Secret
@@ -441,9 +443,10 @@ config:
   # not for the number written here.
   cacheBytes: 1073741824
   cacheTtl: "10m" # -cache-ttl
-  # -tx-cache-bytes: transaction cache ceiling in bytes. 0 = not passed (binary
-  # default -1: the same as cacheBytes).
-  txCacheBytes: 0
+  # -tx-cache-bytes: transaction cache ceiling in bytes; 0 disables the cache
+  # (a bridge that carries the transaction lane only), -1 = cacheBytes. null =
+  # not passed (binary default -1).
+  txCacheBytes: null
 
   # ── Process ────────────────────────────────────────────────────────────────
   # -mode: all = full bridge. sink = receive, parse, verify and count only, with
@@ -454,8 +457,8 @@ config:
   mode: "all" # all | sink (the binary also has -mode tx, the transaction lane only; pass it via extraArgs)
   # -drain-timeout: on SIGTERM, how long each lane connection keeps reading after
   # telling the edge it is closing, so nothing the edge already sent is lost.
-  # Keep it below terminationGracePeriodSeconds. Empty = not passed (binary
-  # default 5s).
+  # Keep it below terminationGracePeriodSeconds; "0s" closes at once. Empty =
+  # not passed (binary default 5s).
   drainTimeout: ""
   # -stats-every: interval between stats blocks. RENDERED UNCONDITIONALLY:
   # "0s" disables periodic stats (a final block is still logged at shutdown),

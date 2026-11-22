@@ -232,7 +232,7 @@
         "submitterGrace": {
           "type": "string",
           "pattern": "^$|^[0-9]+(ns|us|ms|s|m|h)$",
-          "description": "-submitter-grace. Empty = not passed (binary default 45s)."
+          "description": "-submitter-grace; \"0s\" = no grace. Empty = not passed (binary default 45s)."
         },
         "submitterWhenBlind": {
           "type": "boolean",
@@ -280,9 +280,9 @@
           "description": "-tx-queue. 0 = not passed (binary default 8192)."
         },
         "txCacheBytes": {
-          "type": "integer",
+          "type": ["integer", "null"],
           "minimum": -1,
-          "description": "-tx-cache-bytes. 0 = not passed (binary default -1, the same as cacheBytes)."
+          "description": "-tx-cache-bytes. 0 disables the tx cache, -1 = cacheBytes. null = not passed (binary default -1)."
         },
         "cacheBytes": {
           "type": "integer",
@@ -295,7 +295,7 @@
         "drainTimeout": {
           "type": "string",
           "pattern": "^$|^[0-9]+(ns|us|ms|s|m|h)$",
-          "description": "-drain-timeout. Empty = not passed (binary default 5s). Keep below terminationGracePeriodSeconds."
+          "description": "-drain-timeout; \"0s\" closes at once. Empty = not passed (binary default 5s). Keep below terminationGracePeriodSeconds."
         },
         "mode": {
           "type": "string",

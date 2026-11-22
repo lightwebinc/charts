@@ -1,0 +1,5 @@
+# "0s" and 0 are passed, not dropped: omission would restore the binary's
+# 45s grace, 5s drain and -1 (cache on).
++ "-submitter-grace=0s"
++ "-tx-cache-bytes=0"
++ "-drain-timeout=0s"

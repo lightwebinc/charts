@@ -1,0 +1,14 @@
+# A Secret name and key that YAML would read as a number and a boolean stay
+# strings in the rendered volume.
+config:
+  advertise: "http://192.0.2.20:8090"
+  propagation: ["http://192.0.2.10:20833"]
+  kafka: ["192.0.2.10:19092"]
+  peerId: "12D3KooWLRPJAEfHqoBUmnBrDmDcnLnkV8mWMHhqPZbrVqQZBEBu"
+  blockchain: "192.0.2.10:20087"
+  localAsset: "http://192.0.2.10:20090/api/v1"
+  edgeIngress: "192.0.2.30"
+  mineTag: "/ci1/"
+  blockchainApiKeySecret:
+    name: "1234"
+    key: "true"

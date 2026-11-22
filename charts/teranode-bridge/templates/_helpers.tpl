@@ -237,7 +237,10 @@ config.blockchainApiKeySecret.name names a Secret.
 {{- if kindIs "bool" $c.submitter }}{{ $submitter = $c.submitter }}{{ end }}
 - {{ printf "-submitter=%v" $submitter | quote }}
 {{- include "teranode-bridge.flag" (dict "name" "submitter-probe" "v" $c.submitterProbe) -}}
-{{- include "teranode-bridge.flag" (dict "name" "submitter-grace" "v" $c.submitterGrace) -}}
+{{- /* Not the generic helper: it drops "0s", which here means no grace. */ -}}
+{{- with $c.submitterGrace }}
+- {{ printf "-submitter-grace=%s" (. | toString) | quote }}
+{{- end -}}
 {{- include "teranode-bridge.flag" (dict "name" "submitter-when-blind" "v" $c.submitterWhenBlind) -}}
 {{- end -}}
 {{- /* Transaction pipeline */ -}}
@@ -254,10 +257,16 @@ config.blockchainApiKeySecret.name names a Secret.
 {{- /* Cache */ -}}
 {{- include "teranode-bridge.flag" (dict "name" "cache-bytes" "v" $c.cacheBytes) -}}
 {{- include "teranode-bridge.flag" (dict "name" "cache-ttl" "v" $c.cacheTtl) -}}
-{{- include "teranode-bridge.flag" (dict "name" "tx-cache-bytes" "v" $c.txCacheBytes) -}}
+{{- /* Not the generic helper: it drops 0, which here disables the tx cache. */ -}}
+{{- if not (kindIs "invalid" $c.txCacheBytes) }}
+- {{ printf "-tx-cache-bytes=%d" (int64 $c.txCacheBytes) | quote }}
+{{- end -}}
 {{/* Process */}}
 {{- include "teranode-bridge.flag" (dict "name" "mode" "v" $c.mode) -}}
-{{- include "teranode-bridge.flag" (dict "name" "drain-timeout" "v" $c.drainTimeout) -}}
+{{- /* Not the generic helper: it drops "0s", which here means no drain. */ -}}
+{{- with $c.drainTimeout }}
+- {{ printf "-drain-timeout=%s" (. | toString) | quote }}
+{{- end -}}
 {{- /* "0s" = periodic stats OFF; omission would restore the binary's 1m */ -}}
 {{- $stats := "1m" -}}
 {{- if and (not (kindIs "invalid" $c.statsEvery)) (ne ($c.statsEvery | toString) "") }}{{ $stats = ($c.statsEvery | toString) }}{{ end }}
