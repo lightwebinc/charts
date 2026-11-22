@@ -186,18 +186,42 @@ config:
 
   # BRC-139 auto-shard-config consumer (opt-in). See
   # bsv-multicast/DESIGN.md#automatic-shard-configuration.
-  # When enabled the proxy opens a dedicated beacon-receive socket and adopts
-  # ShardBits/SourceMode from authoritative pilot manifests once quorum +
-  # hysteresis are met. Manual config above always wins; default off.
+  # When enabled the proxy opens a dedicated beacon-receive socket and evaluates
+  # authoritative pilot manifests. Images built with lightwebinc/shard-proxy#45
+  # only observe: shardBits, sourceMode and beefShardBits stay as configured,
+  # announcers that disagree are reported as divergence
+  # (multicast_manifest_divergence_total{field}), and the proxy never restarts
+  # itself; to move a value, change it here and restart. Images through 1.44.2,
+  # this chart's appVersion included, restart to adopt instead: with no
+  # announcers at all they read their own flags back as a change and restart
+  # about 2 s after every start unless liveResharding is on, so keep enabled
+  # false on them. Default off.
   autoShardConfig:
     enabled: false          # MANIFEST_CONSUMER_ENABLED: master switch
-    bootstrap: "optional"   # MANIFEST_BOOTSTRAP: optional | required (fail-closed: no egress until quorum)
+    bootstrap: "optional"   # MANIFEST_BOOTSTRAP: optional | required (validated, not acted on: egress binds at once)
     pilotQuorum: 2          # PILOT_QUORUM: min distinct authoritative announcers
     pilotHysteresis: "0s"   # PILOT_HYSTERESIS: 0 ⇒ 2 × AnnounceInterval
     beaconScope: ""         # MANIFEST_BEACON_SCOPE: empty inherits mcScope
     beaconPort: 9001        # MANIFEST_BEACON_PORT: matches shard-manifest -port
-    liveResharding: false   # LIVE_RESHARDING: true = dual-emit bridging; false = restart-on-adopt
-    bridgingWindow: "0s"    # BRIDGING_WINDOW: 0 ⇒ honor pilot TransitionEpoch
+    # LIVE_RESHARDING: true = dual emit to the running and successor layouts while
+    # an announced Successor block holds quorum; nothing cuts over by itself, so
+    # restart onto the successor's shardBits inside that window. false = observe only
+    # (images through 1.44.2: restart to adopt).
+    liveResharding: false
+    bridgingWindow: "0s"    # BRIDGING_WINDOW: parsed, not read
+
+  # Optional binary flags. Each renders only when set: "" or null passes
+  # nothing, so the binary default applies and an older image keeps working.
+  allowStampedIngress: null  # ALLOW_STAMPED_INGRESS: admit framed input that already carries a SeqNum (relay hop, spine collect lane; binary default false)
+  controlGroupCompat: ""     # CONTROL_GROUP_COMPAT: asm-only | both (binary default) | derived; control-plane group prefix during the FF0x to FF3x move
+  ingressDedup: null         # INGRESS_DEDUP: false bypasses ingress TxID dedup entirely (binary default true)
+  pprof: null                # BSP_PPROF: serve net/http/pprof at /debug/pprof/* on the metrics port (profiling only; binary default false)
+  recvBatch: null            # BSP_RECV_BATCH: datagrams per recvmmsg syscall (binary default 32; 1 = per-packet path)
+  recvBufBytes: null         # BSP_RECV_BUF_BYTES: per-worker SO_RCVBUF (binary default 0 = worker default; capped by net.core.rmem_max)
+  requireEf: null            # REQUIRE_EF: admit Extended Format (BRC-30) transaction submissions only (binary default false)
+  retryTee: ""               # BSP_RETRY_TEE: mirror egressed DATA to a co-located retry endpoint's tee, e.g. "[::1]:9001" (collapsed edge)
+  verifyPayloadHash: null    # VERIFY_PAYLOAD_HASH: check the TxID of framed input against its payload (binary default false)
+  verifySubtreeRoot: null    # VERIFY_SUBTREE_ROOT: drop BRC-132 subtrees whose node hashes miss the root (binary default true)
 
 service:
   type: ClusterIP

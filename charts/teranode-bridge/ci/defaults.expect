@@ -1,3 +1,11 @@
 # Tunnel off by default: no sidecar, no volumes, no capability anywhere.
 - wireguard
 - NET_ADMIN
+# Optional flags are not passed unless set, so an older image keeps working.
+- blockchain-api-key
+- -submitter-probe
+- -submitter-grace
+- -submitter-when-blind
+- -tx-queue
+- -tx-cache-bytes
+- -drain-timeout

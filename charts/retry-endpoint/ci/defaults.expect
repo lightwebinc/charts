@@ -1,0 +1,10 @@
+# Optional flags are not passed unless set, so an older image keeps working.
+- name: CACHE_ARENA_BYTES
+- name: CACHE_MAX_BYTES
+- name: CONTROL_GROUP_COMPAT
+- name: DEDUP_BREAKER_WINDOW
+- name: DEDUP_CLAIM_TIMEOUT
+- name: INGRESS_
+- name: MC_JOIN_ENABLED
+- name: PPROF_LISTEN
+- name: TEE_LISTEN

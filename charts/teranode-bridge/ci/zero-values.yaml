@@ -1,0 +1,10 @@
+# Zero values that mean something to the binary reach it: no submitter grace,
+# no drain on SIGTERM, and no transaction cache.
+config:
+  advertise: "http://192.0.2.20:8090"
+  propagation: ["http://192.0.2.10:20833"]
+  kafka: ["192.0.2.10:19092"]
+  peerId: "12D3KooWLRPJAEfHqoBUmnBrDmDcnLnkV8mWMHhqPZbrVqQZBEBu"
+  submitterGrace: "0s"
+  txCacheBytes: 0
+  drainTimeout: "0s"

@@ -157,6 +157,20 @@ describe pod` readable and keeps `--set` free of comma escaping.
 {{- end -}}
 {{- end -}}
 
+{{/*
+apiKeyFile: where the blockchain API key Secret is mounted, or "" when nothing
+is mounted. One definition for the volume, its mount and the flag: the key is
+mounted only when the reverse path is rendered (not sink, blockchain set) and
+config.blockchainApiKeySecret.name names a Secret.
+*/}}
+{{- define "teranode-bridge.apiKeyFile" -}}
+{{- $c := .Values.config -}}
+{{- $s := $c.blockchainApiKeySecret | default dict -}}
+{{- if and (ne ($c.mode | default "all") "sink") $c.blockchain $s.name -}}
+/etc/teranode-bridge/blockchain/api-key
+{{- end -}}
+{{- end -}}
+
 {{- define "teranode-bridge.args" -}}
 {{- $c := .Values.config -}}
 {{- $sink := eq ($c.mode | default "all") "sink" -}}
@@ -200,6 +214,9 @@ describe pod` readable and keeps `--set` free of comma escaping.
 {{- include "teranode-bridge.flag" (dict "name" "blockchain-ca-cert" "v" $c.blockchainCaCert) -}}
 {{- include "teranode-bridge.flag" (dict "name" "blockchain-cert" "v" $c.blockchainCert) -}}
 {{- include "teranode-bridge.flag" (dict "name" "blockchain-key" "v" $c.blockchainKey) -}}
+{{- /* The cluster's grpc_admin_api_key, from the mounted Secret; omitted when
+       none is named, so an older image is never handed the flag. */ -}}
+{{- include "teranode-bridge.flag" (dict "name" "blockchain-api-key-file" "v" (include "teranode-bridge.apiKeyFile" .)) -}}
 {{- /* Keepalive: grpc-go pings NEVER by default, so omission is not a benign
        default: it is the wedge. Rendered explicitly in both directions. */ -}}
 {{- $ka := "30s" -}}
@@ -219,6 +236,12 @@ describe pod` readable and keeps `--set` free of comma escaping.
 {{- $submitter := true -}}
 {{- if kindIs "bool" $c.submitter }}{{ $submitter = $c.submitter }}{{ end }}
 - {{ printf "-submitter=%v" $submitter | quote }}
+{{- include "teranode-bridge.flag" (dict "name" "submitter-probe" "v" $c.submitterProbe) -}}
+{{- /* Not the generic helper: it drops "0s", which here means no grace. */ -}}
+{{- with $c.submitterGrace }}
+- {{ printf "-submitter-grace=%s" (. | toString) | quote }}
+{{- end -}}
+{{- include "teranode-bridge.flag" (dict "name" "submitter-when-blind" "v" $c.submitterWhenBlind) -}}
 {{- end -}}
 {{- /* Transaction pipeline */ -}}
 {{- include "teranode-bridge.flag" (dict "name" "tx-batch" "v" $c.txBatch) -}}
@@ -230,11 +253,20 @@ describe pod` readable and keeps `--set` free of comma escaping.
 {{- $retries := 3 -}}
 {{- if not (kindIs "invalid" $c.txRetries) }}{{ $retries = int64 $c.txRetries }}{{ end }}
 - {{ printf "-tx-retries=%d" $retries | quote }}
+{{- include "teranode-bridge.flag" (dict "name" "tx-queue" "v" $c.txQueue) -}}
 {{- /* Cache */ -}}
 {{- include "teranode-bridge.flag" (dict "name" "cache-bytes" "v" $c.cacheBytes) -}}
 {{- include "teranode-bridge.flag" (dict "name" "cache-ttl" "v" $c.cacheTtl) -}}
+{{- /* Not the generic helper: it drops 0, which here disables the tx cache. */ -}}
+{{- if not (kindIs "invalid" $c.txCacheBytes) }}
+- {{ printf "-tx-cache-bytes=%d" (int64 $c.txCacheBytes) | quote }}
+{{- end -}}
 {{/* Process */}}
 {{- include "teranode-bridge.flag" (dict "name" "mode" "v" $c.mode) -}}
+{{- /* Not the generic helper: it drops "0s", which here means no drain. */ -}}
+{{- with $c.drainTimeout }}
+- {{ printf "-drain-timeout=%s" (. | toString) | quote }}
+{{- end -}}
 {{- /* "0s" = periodic stats OFF; omission would restore the binary's 1m */ -}}
 {{- $stats := "1m" -}}
 {{- if and (not (kindIs "invalid" $c.statsEvery)) (ne ($c.statsEvery | toString) "") }}{{ $stats = ($c.statsEvery | toString) }}{{ end }}

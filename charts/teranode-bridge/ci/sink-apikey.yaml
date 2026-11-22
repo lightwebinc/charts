@@ -1,0 +1,6 @@
+# A sink runs no reverse path, so a named key Secret is neither mounted nor passed.
+config:
+  mode: sink
+  blockchain: "192.0.2.10:20087"
+  blockchainApiKeySecret:
+    name: teranode-api-key

@@ -47,7 +47,7 @@ The Linux kernel delivers each multicast datagram to **all** sockets in a SO_REU
 
 The chart ships hardened pod-level defaults: `resources` requests/limits (per node when running as a DaemonSet), a nonroot `podSecurityContext` (uid 65532, seccomp `RuntimeDefault`), and `terminationGracePeriodSeconds: 30`: keep it `>= config.drainTimeout` so in-flight NACK recovery completes on shutdown. The default `workloadType: Deployment` is single-node/test-only; production needs `DaemonSet` plus a fabric `nodeSelector` (see the warning in [`values.yaml`](values.yaml)).
 
-See [`values.yaml`](values.yaml). Most flags accepted by the listener binary are exposed under `.config`; the NACK tail-probe family (`-nack-backoff-base`, `-nack-tail-probe*`, `-nack-max-flows`, `-nack-max-forward-jump`), `-rebucket-relay`, `-retry-tee` (`RETRY_TEE`, receive-side mirror to a co-resident retry-endpoint `-tee-listen`), `-control-group-compat`, `-manifest-beacon-port`, `-reassembly-ttl` and `-reassembly-max-age` are settable via `extraEnv` (all honored by the default appVersion; on an older `image.tag` pin `-nack-tail-probe*` requires ≥ 1.15.0, `-rebucket-relay` ≥ 1.10.1 and `-retry-tee` ≥ 1.24.1). Exposed under `.config`:
+See [`values.yaml`](values.yaml). The flags accepted by the listener binary are exposed under `.config`. The optional flags at the end of `.config` render only when set (an unset value passes nothing, so the binary default applies): the NACK family (`nackBackoffBase`, `nackTailProbe*`, `nackMaxFlows`, `nackMaxForwardJump`, `nackMaxPending`), the reference lanes (`laneTx`, `laneSubtree`, `laneBlock`, `laneHeader`, `laneBeef`), `rebucketRelay`, `retryTee` (`RETRY_TEE`, receive-side mirror to a co-resident retry-endpoint `-tee-listen`), `controlGroupCompat`, `manifestBeaconPort`, `reassemblyTtl` and `reassemblyMaxAge`. Each needs an image at or above the release that added it, and an older image ignores the key: `-nack-backoff-base` ≥ 1.5.6, `-nack-max-flows` ≥ 1.6.5, `-nack-max-forward-jump` ≥ 1.6.8, `-rebucket-relay` ≥ 1.10.1, `-nack-tail-probe*` ≥ 1.15.0, `-retry-tee` ≥ 1.24.1, `-control-group-compat` and `-manifest-beacon-port` ≥ 1.27.0, `-reassembly-ttl`/`-reassembly-max-age` ≥ 1.30.0, the lanes ≥ 1.36.0 and `-nack-max-pending` ≥ 1.36.1. When the chart's appVersion is older than an option needs, set `image.tag`. Any lane replaces `config.egressAddr` for every class: a class left without its own lane is withheld (counted in `bsl_lane_drops_total{reason="no_lane"}`). Lanes are not valid with `config.mode: receiver`: the listener refuses to start. Exposed under `.config`:
 
 - `config.mode`: role split (`collapsed`|`receiver`|`delivery`; requires appVersion ≥ 1.6.9) and `config.deliveryAddrs`: receiver-mode delivery fan-out target set (requires appVersion ≥ 1.7.0)
 - Multicast egress / domain bridging
@@ -118,22 +118,34 @@ completeness matters.
 ### BRC-139 auto-shard-config (opt-in)
 
 `config.autoShardConfig` exposes the BRC-139 manifest consumer. Off by
-default; manual `config.shardBits`/`sourceMode`/`shardInclude` always win.
-When `enabled: true` the listener decodes manifests off its beacon socket
-and adopts `ShardBits`/`SourceMode` once `pilotQuorum` distinct
-authoritative announcers agree for the hysteresis window. With
-`shardIncludeFromManifest: true` it additionally joins pilot groups at
-runtime (`union(shardInclude, pilot groups)`).
+default. When `enabled: true` the listener decodes manifests off its beacon
+socket and evaluates them, and only observes: `config.shardBits` and
+`sourceMode` stay as configured, and the listener never restarts itself. An
+authoritative announcer of another `shardBits` is counted as divergence
+(`multicast_manifest_divergence_total`); images built with
+lightwebinc/shard-listener#53 compare `sourceMode` too, and log a divergence
+once when it starts and once when it clears. Older images, the chart's
+appVersion included, do not compare `sourceMode`, and log `auto-config adopted
+new ShardBits (restart mode)` at start without acting on it. With
+`shardIncludeFromManifest: true` the listener joins pilot groups at runtime
+(`union(shardInclude, pilot groups)`) as soon as one authoritative pilot lists
+them: pilot groups are not gated by quorum or hysteresis.
+
+`liveResharding` is the listener's side of the proxy's bridging path: the
+listener does not join the successor layout (a Successor block is tracked as
+a view only), and with `enabled` it needs `config.egressDedupCap > 0` and
+`config.egressDedupTtl >= 4s`, so egress dedup absorbs the duplicate frames a
+dual-emitting proxy sends.
 
 | Key | Env var | Default | Notes |
 |-----|---------|---------|-------|
 | `enabled` | `MANIFEST_CONSUMER_ENABLED` | `false` | master switch |
-| `bootstrap` | `MANIFEST_BOOTSTRAP` | `optional` | `required` fails closed: no data-plane bind until quorum |
+| `bootstrap` | `MANIFEST_BOOTSTRAP` | `optional` | validated, not acted on: with `required` the listener still binds the data plane at once |
 | `pilotQuorum` | `PILOT_QUORUM` | `2` | min distinct authoritative announcers |
 | `pilotHysteresis` | `PILOT_HYSTERESIS` | `0s` | `0s` ⇒ 2 × AnnounceInterval |
 | `shardIncludeFromManifest` | `SHARD_INCLUDE_FROM_MANIFEST` | `false` | additive auto-join to pilot groups |
-| `liveResharding` | `LIVE_RESHARDING` | `false` | bridging vs restart-on-adopt |
-| `bridgingWindow` | `BRIDGING_WINDOW` | `0s` | `0s` ⇒ honor pilot `TransitionEpoch` |
+| `liveResharding` | `LIVE_RESHARDING` | `false` | the listener's side of the bridging path (see above); with `enabled` it needs `config.egressDedupCap > 0` and `config.egressDedupTtl >= 4s` |
+| `bridgingWindow` | `BRIDGING_WINDOW` | `0s` | parsed, not read |
 
 See the [Automatic Shard Configuration](https://github.com/lightwebinc/bsv-multicast/blob/main/DESIGN.md#automatic-shard-configuration).
 

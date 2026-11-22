@@ -1,0 +1,13 @@
+# Every optional flag set: each renders, numbers stay integers (a YAML number
+# reaches the template as float64), and an explicit false still renders.
+config:
+  allowStampedIngress: true
+  controlGroupCompat: both
+  ingressDedup: false
+  pprof: true
+  recvBatch: 64
+  recvBufBytes: 134217728
+  requireEf: true
+  retryTee: "[::1]:9001"
+  verifyPayloadHash: true
+  verifySubtreeRoot: false

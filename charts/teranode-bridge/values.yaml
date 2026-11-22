@@ -314,6 +314,17 @@ config:
   # counting) but publishes nothing and fetches no assets: a hot spare whose
   # promotion is a flag flip and a restart.
   submitter: true
+  # -submitter-probe: on a STANDBY (submitter: false), the primary bridge's
+  # /readyz URL: the standby promotes itself while the primary is down and
+  # demotes when it returns. Empty = not passed.
+  submitterProbe: ""
+  # -submitter-grace: after start, wait this long before the reverse path may
+  # publish (the registry starts empty); "0s" = no grace. Empty = not passed
+  # (binary default 45s).
+  submitterGrace: ""
+  # -submitter-when-blind: publish even while no delivery lane is connected.
+  # Unsafe unless this cluster is the only publisher. false = not passed.
+  submitterWhenBlind: false
 
   # -mine-tag: this cluster's coinbase_arbitrary_text (e.g. "/teranode1/").
   # STRONGLY RECOMMENDED whenever the reverse path is on. Blockchain
@@ -348,6 +359,17 @@ config:
   blockchainCaCert: "" # -blockchain-ca-cert  CA signing the cluster's server cert
   blockchainCert: "" #    -blockchain-cert     client cert presented to the cluster
   blockchainKey: "" #     -blockchain-key      key for blockchainCert
+  # -blockchain-api-key-file: the cluster's grpc_admin_api_key, sent as x-api-key
+  # on every blockchain gRPC call. Teranode v0.16.1 and later refuse every
+  # blockchain method but Health without it: the reverse path then retries
+  # forever while delivery, announce and retrieval keep working. Read only from a
+  # Secret you create out of band, mounted read-only into the pod:
+  #   kubectl create secret generic <name> --from-file=api-key=./grpc_admin_api_key
+  # Empty name: nothing is mounted and the flag is not passed. Needs
+  # teranode-bridge 0.13.0 or later (an older image exits on the unknown flag).
+  blockchainApiKeySecret:
+    name: ""
+    key: "api-key" # key within the Secret
 
   # Keepalive is what stops the reverse path WEDGING. grpc-go's client default
   # is to never ping; the connection crosses a tunnel, and a silently dropped
@@ -405,6 +427,10 @@ config:
   # parent from a cross-builder race). RENDERED UNCONDITIONALLY: 0 means "no
   # retries", which omission would turn back into the binary's 6.
   txRetries: 3
+  # -tx-queue: transactions the pipe holds before backpressure blocks the lane
+  # read; this absorbs the cluster's stall at a block boundary. 0 = not passed
+  # (binary default 8192).
+  txQueue: 0
 
   # ── Cache ──────────────────────────────────────────────────────────────────
   # This is a cache, not a store of record. Size the TTL against VALIDATION LAG
@@ -417,6 +443,10 @@ config:
   # not for the number written here.
   cacheBytes: 1073741824
   cacheTtl: "10m" # -cache-ttl
+  # -tx-cache-bytes: transaction cache ceiling in bytes; 0 disables the cache
+  # (a bridge that carries the transaction lane only), -1 = cacheBytes. null =
+  # not passed (binary default -1).
+  txCacheBytes: null
 
   # ── Process ────────────────────────────────────────────────────────────────
   # -mode: all = full bridge. sink = receive, parse, verify and count only, with
@@ -425,6 +455,11 @@ config:
   # how you burn in a delivery slot before a cluster exists, or separate
   # object-plane faults from cluster-side ones.
   mode: "all" # all | sink (the binary also has -mode tx, the transaction lane only; pass it via extraArgs)
+  # -drain-timeout: on SIGTERM, how long each lane connection keeps reading after
+  # telling the edge it is closing, so nothing the edge already sent is lost.
+  # Keep it below terminationGracePeriodSeconds; "0s" closes at once. Empty =
+  # not passed (binary default 5s).
+  drainTimeout: ""
   # -stats-every: interval between stats blocks. RENDERED UNCONDITIONALLY:
   # "0s" disables periodic stats (a final block is still logged at shutdown),
   # which omission would turn back into the binary's 1m.
@@ -574,7 +609,7 @@ profiling:
 #
 #   * readiness stays on /readyz, NOT /health/readiness. /readyz is the failover
 #     contract: a standby bridge polls the PRIMARY's /readyz to decide whether
-#     to promote itself (-submitter-probe, via extraArgs). Pointing k8s readiness at the
+#     to promote itself (config.submitterProbe). Pointing k8s readiness at the
 #     dependency-aware route is fine on its own, but the two must not be
 #     confused: a shared-dependency blip that both bridges see would otherwise
 #     look like the primary dying, and two submitters is worse than a late one.

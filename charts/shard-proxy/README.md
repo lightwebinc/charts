@@ -74,7 +74,7 @@ Two host facts the preset also sets:
 
 ## Values reference
 
-See [`values.yaml`](values.yaml) for the full annotated reference. Most flags accepted by the proxy binary are exposed under `.config`; the remainder (`-require-ef`, `-allow-stamped-ingress`, `-verify-payload-hash`, `-verify-subtree-root`, `-recv-batch`, `-retry-tee`, `-recv-buf-bytes`, `-pprof`, `-ingress-dedup`, `-control-group-compat`) can be set via `extraEnv` using the env names in [shard-proxy `docs/configuration.md`](https://github.com/lightwebinc/shard-proxy/blob/main/docs/configuration.md). Cluster-shape knobs (replicas, autoscaling, PDB, NetworkPolicy, ServiceMonitor) live at the top level.
+See [`values.yaml`](values.yaml) for the full annotated reference. The flags accepted by the proxy binary are exposed under `.config`. The optional flags at the end of `.config` (`requireEf`, `allowStampedIngress`, `verifyPayloadHash`, `verifySubtreeRoot`, `recvBatch`, `retryTee`, `recvBufBytes`, `pprof`, `ingressDedup`, `controlGroupCompat`) render only when set: an unset value passes nothing, so the binary default applies (env names in [shard-proxy `docs/configuration.md`](https://github.com/lightwebinc/shard-proxy/blob/main/docs/configuration.md)). Cluster-shape knobs (replicas, autoscaling, PDB, NetworkPolicy, ServiceMonitor) live at the top level.
 
 The chart includes [`values.schema.json`](values.schema.json): `helm install` rejects out-of-range `shardBits`, invalid `mcScope`, invalid `networking.mode`, an invalid `logFormat` (`text`|`json`), `logLevel` (`debug`|`info`|`warn`|`error`), or out-of-range `traceSampling` (`0`–`1`) before reaching the cluster.
 
@@ -171,22 +171,37 @@ for fabric prerequisites.
 ### BRC-139 auto-shard-config (opt-in)
 
 `config.autoShardConfig` exposes the BRC-139 manifest consumer. Off by
-default (`enabled: false`); manual `config.shardBits`/`sourceMode` always
-win. When `enabled: true` the proxy opens a dedicated beacon-receive
-socket and adopts `ShardBits`/`SourceMode` from authoritative pilot
-manifests once `pilotQuorum` distinct announcers agree for the
-hysteresis window.
+default (`enabled: false`). When `enabled: true` the proxy opens a
+dedicated beacon-receive socket and evaluates authoritative pilot
+manifests. Images built with lightwebinc/shard-proxy#45 only observe:
+`config.shardBits`, `sourceMode` and `beefShardBits` stay as configured,
+announcers that disagree are reported as divergence
+(`multicast_manifest_divergence_total{field}`, and a warning when a field
+starts diverging), and the proxy never restarts itself. To move a proxy to
+a new value, change it and restart.
+
+Images through 1.44.2, this chart's appVersion (1.43.1) included, restart
+to adopt manifest values instead. With no announcers at all they read their
+own flags back as a change and restart about 2 s after every start, unless
+`liveResharding` is on; keep `enabled: false` on those images.
+
+`liveResharding: true` adds the bridging path: while an announced
+Successor block holds quorum, the proxy emits each frame to both the
+running and the successor groups (fragmented BRC-130 transactions go to the
+running group only, so receivers keep the running layout joined). Nothing
+cuts over by itself: restart each proxy with the successor's `shardBits`
+inside that window.
 
 | Key | Env var | Default | Notes |
 |-----|---------|---------|-------|
 | `enabled` | `MANIFEST_CONSUMER_ENABLED` | `false` | master switch |
-| `bootstrap` | `MANIFEST_BOOTSTRAP` | `optional` | `required` fails closed: no data-plane egress until quorum |
+| `bootstrap` | `MANIFEST_BOOTSTRAP` | `optional` | validated, not acted on: with `required` the proxy still binds egress at once |
 | `pilotQuorum` | `PILOT_QUORUM` | `2` | min distinct authoritative announcers |
 | `pilotHysteresis` | `PILOT_HYSTERESIS` | `0s` | `0s` ⇒ 2 × AnnounceInterval |
 | `beaconScope` | `MANIFEST_BEACON_SCOPE` | `""` | empty inherits `mcScope` |
 | `beaconPort` | `MANIFEST_BEACON_PORT` | `9001` | matches shard-manifest `-port` |
-| `liveResharding` | `LIVE_RESHARDING` | `false` | `true` = dual-emit bridging; `false` = restart-on-adopt |
-| `bridgingWindow` | `BRIDGING_WINDOW` | `0s` | `0s` ⇒ honor pilot `TransitionEpoch` |
+| `liveResharding` | `LIVE_RESHARDING` | `false` | `true` = dual emit while a Successor block holds quorum, no automatic cutover; `false` = observe only (images through 1.44.2: restart to adopt) |
+| `bridgingWindow` | `BRIDGING_WINDOW` | `0s` | parsed, not read |
 
 See the [Automatic Shard Configuration](https://github.com/lightwebinc/bsv-multicast/blob/main/DESIGN.md#automatic-shard-configuration).
 

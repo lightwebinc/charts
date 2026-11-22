@@ -1,0 +1,16 @@
++ name: ALLOW_STAMPED_INGRESS
++ name: BSP_PPROF
++ name: BSP_RECV_BATCH
++ value: "64"
++ name: BSP_RECV_BUF_BYTES
++ value: "134217728"
++ name: BSP_RETRY_TEE
++ value: "[::1]:9001"
++ name: CONTROL_GROUP_COMPAT
++ name: INGRESS_DEDUP
++ name: REQUIRE_EF
++ name: VERIFY_PAYLOAD_HASH
++ name: VERIFY_SUBTREE_ROOT
++ value: "false"
+# No number reaches the pod spec in scientific notation.
+- e+0

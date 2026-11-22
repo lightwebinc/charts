@@ -1,0 +1,22 @@
+# Reverse path with the cluster's blockchain API key (Teranode v0.16.1 and later
+# refuse every blockchain method but Health without it), beside the tunnel's
+# own volumes.
+config:
+  advertise: "http://192.0.2.20:8090"
+  propagation: ["http://192.0.2.10:20833"]
+  kafka: ["192.0.2.10:19092"]
+  peerId: "12D3KooWLRPJAEfHqoBUmnBrDmDcnLnkV8mWMHhqPZbrVqQZBEBu"
+  blockchain: "192.0.2.10:20087"
+  localAsset: "http://192.0.2.10:20090/api/v1"
+  edgeIngress: "192.0.2.30"
+  mineTag: "/ci1/"
+  blockchainApiKeySecret:
+    name: teranode-api-key
+  submitterGrace: "60s"
+  txQueue: 16384
+  txCacheBytes: 536870912
+  drainTimeout: "8s"
+tunnel:
+  enabled: true
+  configSecret:
+    name: bridge-wg

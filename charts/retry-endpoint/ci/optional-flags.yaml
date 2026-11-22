@@ -1,0 +1,16 @@
+# Every optional flag set: each renders, numbers stay integers (a YAML number
+# reaches the template as float64), and an explicit false still renders.
+config:
+  cacheArenaBytes: 2147483648
+  cacheMaxBytes: 1073741824
+  controlGroupCompat: both
+  dedupBreakerWindow: "0s"
+  dedupClaimTimeout: "50ms"
+  ingressGro: true
+  ingressProcs: 8
+  ingressQueueDepth: 4096
+  ingressRecvBufBytes: 134217728
+  ingressWorkers: 4
+  mcJoinEnabled: false
+  pprofListen: "127.0.0.1:6071"
+  teeListen: "[::1]:9002"

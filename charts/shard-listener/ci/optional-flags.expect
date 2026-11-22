@@ -1,0 +1,25 @@
++ name: SSM_PUBLISHERS_STATIC
++ value: "2001:db8:a::1,2001:db8:a::2"
++ name: CONTROL_GROUP_COMPAT
++ value: "derived"
++ name: LANE_TX
++ value: "[::1]:9101"
++ name: LANE_BEEF
++ value: "[::1]:9105"
++ name: MANIFEST_BEACON_PORT
++ value: "9301"
++ name: NACK_MAX_FLOWS
++ value: "0"
++ name: NACK_MAX_PENDING
++ value: "2097152"
++ name: NACK_TAIL_PROBE
++ value: "false"
++ name: NACK_TAIL_PROBE_IDLE_FACTOR
++ value: "2.5"
++ name: REASSEMBLY_TTL
++ value: "20s"
++ name: REBUCKET_RELAY
++ name: RETRY_TEE
++ value: "[::1]:9002"
+# No number reaches the pod spec in scientific notation.
+- e+0

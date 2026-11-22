@@ -225,6 +225,19 @@
           "type": "boolean",
           "description": "Hold the reverse-path submitter role. Exactly one bridge per class per cluster may hold it; rendered unconditionally as -submitter=<value> because the binary default is true."
         },
+        "submitterProbe": {
+          "type": "string",
+          "description": "-submitter-probe: the primary bridge's /readyz URL, set on a standby. Empty = not passed."
+        },
+        "submitterGrace": {
+          "type": "string",
+          "pattern": "^$|^[0-9]+(ns|us|ms|s|m|h)$",
+          "description": "-submitter-grace; \"0s\" = no grace. Empty = not passed (binary default 45s)."
+        },
+        "submitterWhenBlind": {
+          "type": "boolean",
+          "description": "-submitter-when-blind: publish with no delivery lane connected. false = not passed."
+        },
         "mineTag": {
           "type": "string"
         },
@@ -261,6 +274,16 @@
           "type": "integer",
           "minimum": 0
         },
+        "txQueue": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "-tx-queue. 0 = not passed (binary default 8192)."
+        },
+        "txCacheBytes": {
+          "type": ["integer", "null"],
+          "minimum": -1,
+          "description": "-tx-cache-bytes. 0 disables the tx cache, -1 = cacheBytes. null = not passed (binary default -1)."
+        },
         "cacheBytes": {
           "type": "integer",
           "minimum": 0,
@@ -268,6 +291,11 @@
         },
         "cacheTtl": {
           "type": "string"
+        },
+        "drainTimeout": {
+          "type": "string",
+          "pattern": "^$|^[0-9]+(ns|us|ms|s|m|h)$",
+          "description": "-drain-timeout; \"0s\" closes at once. Empty = not passed (binary default 5s). Keep below terminationGracePeriodSeconds."
         },
         "mode": {
           "type": "string",
@@ -318,6 +346,19 @@
         },
         "blockchainKey": {
           "type": "string"
+        },
+        "blockchainApiKeySecret": {
+          "type": "object",
+          "description": "Secret holding the cluster's grpc_admin_api_key, mounted read-only and passed as -blockchain-api-key-file. Empty name = not mounted, flag not passed.",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "key": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
         },
         "blockchainKeepalive": {
           "type": "string",
