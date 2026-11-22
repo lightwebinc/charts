@@ -4,6 +4,8 @@ config:
   cacheArenaBytes: 2147483648
   cacheMaxBytes: 1073741824
   controlGroupCompat: both
+  dedupBreakerWindow: "0s"
+  dedupClaimTimeout: "50ms"
   ingressGro: true
   ingressProcs: 8
   ingressQueueDepth: 4096

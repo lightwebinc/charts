@@ -179,6 +179,17 @@
           "type": "string",
           "enum": ["", "asm-only", "both", "derived"]
         },
+        "dedupBreakerWindow": {
+          "type": "string",
+          "pattern": "^$|^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$",
+          "description": "DEDUP_BREAKER_WINDOW: skip dedup claims this long after one fails; \"0s\" = no breaker. Empty = not passed (binary default 5s)."
+        },
+        "dedupClaimTimeout": {
+          "type": "string",
+          "pattern": "^$|^([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$",
+          "not": {"pattern": "^(0+(\\.0+)?(ns|us|µs|ms|s|m|h))+$"},
+          "description": "DEDUP_CLAIM_TIMEOUT: per-claim timeout of the cross-instance dedup claims; must be > 0 (the binary refuses 0). Empty = not passed (binary default 25ms)."
+        },
         "ingressGro": {
           "type": ["boolean", "null"]
         },

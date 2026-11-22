@@ -260,6 +260,8 @@ Usage: include "retry-endpoint.optEnv" (list "NAME" .Values.config.key)
 {{- include "retry-endpoint.optEnv" (list "CACHE_ARENA_BYTES" .Values.config.cacheArenaBytes) }}
 {{- include "retry-endpoint.optEnv" (list "CACHE_MAX_BYTES" .Values.config.cacheMaxBytes) }}
 {{- include "retry-endpoint.optEnv" (list "CONTROL_GROUP_COMPAT" .Values.config.controlGroupCompat) }}
+{{- include "retry-endpoint.optEnv" (list "DEDUP_BREAKER_WINDOW" .Values.config.dedupBreakerWindow) }}
+{{- include "retry-endpoint.optEnv" (list "DEDUP_CLAIM_TIMEOUT" .Values.config.dedupClaimTimeout) }}
 {{- include "retry-endpoint.optEnv" (list "INGRESS_GRO" .Values.config.ingressGro) }}
 {{- include "retry-endpoint.optEnv" (list "INGRESS_PROCS" .Values.config.ingressProcs) }}
 {{- include "retry-endpoint.optEnv" (list "INGRESS_QUEUE_DEPTH" .Values.config.ingressQueueDepth) }}

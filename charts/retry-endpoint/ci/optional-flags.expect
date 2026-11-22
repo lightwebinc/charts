@@ -3,6 +3,10 @@
 + name: CACHE_MAX_BYTES
 + value: "1073741824"
 + name: CONTROL_GROUP_COMPAT
++ name: DEDUP_BREAKER_WINDOW
++ value: "0s"
++ name: DEDUP_CLAIM_TIMEOUT
++ value: "50ms"
 + name: INGRESS_GRO
 + name: INGRESS_PROCS
 + name: INGRESS_QUEUE_DEPTH
