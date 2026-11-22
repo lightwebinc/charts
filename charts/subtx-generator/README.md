@@ -32,14 +32,14 @@ The binaries are configured by **CLI flags**; the only environment variable they
 helm install gen oci://ghcr.io/lightwebinc/charts/subtx-generator \
   --version 0.3.8 -n bsv-mcast \
   --set mode=subtx-gen \
-  --set args.addr=[fd20::20]:8725 \
+  --set args.addr=[2001:db8::20]:8725 \
   --set subtxGen.pps=1000 --set subtxGen.duration=0s
 
 # Finite load test (Job): send 10 anchor frames then exit
 helm install anchor-test . -n bsv-mcast \
   --set mode=send-anchor-frame \
   --set workloadType=Job \
-  --set args.addr=[fd20::20]:8725 \
+  --set args.addr=[2001:db8::20]:8725 \
   --set sendAnchorFrame.count=10
 ```
 

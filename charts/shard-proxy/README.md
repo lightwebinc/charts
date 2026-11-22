@@ -14,8 +14,8 @@ This repository packages templates, default values, JSON Schema validation, and 
 # OCI registry (SSM default: bindSource is the pod's fabric IPv6, unique per replica)
 helm install proxy oci://ghcr.io/lightwebinc/charts/shard-proxy \
   --version 0.7.11 -n bsv-mcast --create-namespace \
-  --set networking.multus.fabricIPv6=fd20::21/64 \
-  --set config.bindSource=fd20::21
+  --set networking.multus.fabricIPv6=2001:db8::21/64 \
+  --set config.bindSource=2001:db8::21
 
 # Or from a local clone (lab/dev: ASM fallback needs no per-replica source)
 helm install proxy . -n bsv-mcast --create-namespace \
