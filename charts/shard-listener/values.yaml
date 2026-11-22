@@ -258,9 +258,10 @@ config:
   # BRC-139 auto-shard-config consumer (opt-in). See
   # bsv-multicast/DESIGN.md#automatic-shard-configuration.
   # When enabled the listener decodes manifests off its beacon socket and
-  # evaluates them. shardBits and sourceMode stay as configured: shardBits is
-  # compared, and any authoritative announcer of another value counts as
-  # divergence; sourceMode is not compared. With
+  # evaluates them, but only observes: shardBits and sourceMode stay as
+  # configured, any authoritative announcer of another shardBits counts as
+  # divergence (another sourceMode too on images built with
+  # lightwebinc/shard-listener#53), and the listener never restarts itself. With
   # shardIncludeFromManifest it joins pilot groups via runtime
   # AddGroup/RemoveGroup as soon as one authoritative pilot lists them (not
   # gated by quorum or hysteresis). Default off.
@@ -270,7 +271,11 @@ config:
     pilotQuorum: 2                # PILOT_QUORUM: min distinct authoritative announcers
     pilotHysteresis: "0s"         # PILOT_HYSTERESIS: 0 ⇒ 2 × AnnounceInterval
     shardIncludeFromManifest: false  # SHARD_INCLUDE_FROM_MANIFEST: additive auto-join: union(shardInclude, pilot groups)
-    liveResharding: false         # LIVE_RESHARDING: validated, not acted on; with enabled it needs egressDedupCap > 0 and egressDedupTtl >= 4s
+    # LIVE_RESHARDING: the listener's side of the bridging path. It does not join the
+    # successor layout (a Successor block is tracked as a view only); with enabled it
+    # needs egressDedupCap > 0 and egressDedupTtl >= 4s, so egress dedup absorbs the
+    # duplicate frames a dual-emitting proxy sends.
+    liveResharding: false
     bridgingWindow: "0s"          # BRIDGING_WINDOW: parsed, not read
 
   # Optional binary flags. Each renders only when set: "" or null passes

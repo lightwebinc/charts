@@ -119,14 +119,23 @@ completeness matters.
 
 `config.autoShardConfig` exposes the BRC-139 manifest consumer. Off by
 default. When `enabled: true` the listener decodes manifests off its beacon
-socket and evaluates them; it never restarts itself, and `config.shardBits`
-and `sourceMode` stay as configured. `shardBits` is compared: any
-authoritative announcer of another value is counted as divergence
-(`multicast_manifest_divergence_total`). `sourceMode` is not compared, so a
-source-mode mismatch is not counted. With `shardIncludeFromManifest: true`
-it joins pilot groups at runtime (`union(shardInclude, pilot groups)`) as
-soon as one authoritative pilot lists them: pilot groups are not gated by
-quorum or hysteresis.
+socket and evaluates them, and only observes: `config.shardBits` and
+`sourceMode` stay as configured, and the listener never restarts itself. An
+authoritative announcer of another `shardBits` is counted as divergence
+(`multicast_manifest_divergence_total`); images built with
+lightwebinc/shard-listener#53 compare `sourceMode` too, and log a divergence
+once when it starts and once when it clears. Older images, the chart's
+appVersion included, do not compare `sourceMode`, and log `auto-config adopted
+new ShardBits (restart mode)` at start without acting on it. With
+`shardIncludeFromManifest: true` the listener joins pilot groups at runtime
+(`union(shardInclude, pilot groups)`) as soon as one authoritative pilot lists
+them: pilot groups are not gated by quorum or hysteresis.
+
+`liveResharding` is the listener's side of the proxy's bridging path: the
+listener does not join the successor layout (a Successor block is tracked as
+a view only), and with `enabled` it needs `config.egressDedupCap > 0` and
+`config.egressDedupTtl >= 4s`, so egress dedup absorbs the duplicate frames a
+dual-emitting proxy sends.
 
 | Key | Env var | Default | Notes |
 |-----|---------|---------|-------|
@@ -135,7 +144,7 @@ quorum or hysteresis.
 | `pilotQuorum` | `PILOT_QUORUM` | `2` | min distinct authoritative announcers |
 | `pilotHysteresis` | `PILOT_HYSTERESIS` | `0s` | `0s` ⇒ 2 × AnnounceInterval |
 | `shardIncludeFromManifest` | `SHARD_INCLUDE_FROM_MANIFEST` | `false` | additive auto-join to pilot groups |
-| `liveResharding` | `LIVE_RESHARDING` | `false` | validated, not acted on; with `enabled` it needs `config.egressDedupCap > 0` and `config.egressDedupTtl >= 4s` |
+| `liveResharding` | `LIVE_RESHARDING` | `false` | the listener's side of the bridging path (see above); with `enabled` it needs `config.egressDedupCap > 0` and `config.egressDedupTtl >= 4s` |
 | `bridgingWindow` | `BRIDGING_WINDOW` | `0s` | parsed, not read |
 
 See the [Automatic Shard Configuration](https://github.com/lightwebinc/bsv-multicast/blob/main/DESIGN.md#automatic-shard-configuration).
