@@ -173,11 +173,17 @@ for fabric prerequisites.
 `config.autoShardConfig` exposes the BRC-139 manifest consumer. Off by
 default (`enabled: false`). When `enabled: true` the proxy opens a
 dedicated beacon-receive socket and evaluates authoritative pilot
-manifests, and only observes: `config.shardBits`, `sourceMode` and
-`beefShardBits` stay as configured, announcers that disagree are reported
-as divergence (`multicast_manifest_divergence_total{field}`, and a warning
-when a field starts diverging), and the proxy never restarts itself. To
-move a proxy to a new value, change it and restart.
+manifests. Images built with lightwebinc/shard-proxy#45 only observe:
+`config.shardBits`, `sourceMode` and `beefShardBits` stay as configured,
+announcers that disagree are reported as divergence
+(`multicast_manifest_divergence_total{field}`, and a warning when a field
+starts diverging), and the proxy never restarts itself. To move a proxy to
+a new value, change it and restart.
+
+Images through 1.44.2, this chart's appVersion (1.43.1) included, restart
+to adopt manifest values instead. With no announcers at all they read their
+own flags back as a change and restart about 2 s after every start, unless
+`liveResharding` is on; keep `enabled: false` on those images.
 
 `liveResharding: true` adds the bridging path: while an announced
 Successor block holds quorum, the proxy emits each frame to both the
@@ -194,7 +200,7 @@ inside that window.
 | `pilotHysteresis` | `PILOT_HYSTERESIS` | `0s` | `0s` ⇒ 2 × AnnounceInterval |
 | `beaconScope` | `MANIFEST_BEACON_SCOPE` | `""` | empty inherits `mcScope` |
 | `beaconPort` | `MANIFEST_BEACON_PORT` | `9001` | matches shard-manifest `-port` |
-| `liveResharding` | `LIVE_RESHARDING` | `false` | `true` = dual emit while a Successor block holds quorum, no automatic cutover; `false` = observe only |
+| `liveResharding` | `LIVE_RESHARDING` | `false` | `true` = dual emit while a Successor block holds quorum, no automatic cutover; `false` = observe only (images through 1.44.2: restart to adopt) |
 | `bridgingWindow` | `BRIDGING_WINDOW` | `0s` | parsed, not read |
 
 See the [Automatic Shard Configuration](https://github.com/lightwebinc/bsv-multicast/blob/main/DESIGN.md#automatic-shard-configuration).

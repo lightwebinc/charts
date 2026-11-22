@@ -187,10 +187,15 @@ config:
   # BRC-139 auto-shard-config consumer (opt-in). See
   # bsv-multicast/DESIGN.md#automatic-shard-configuration.
   # When enabled the proxy opens a dedicated beacon-receive socket and evaluates
-  # authoritative pilot manifests, but only observes: shardBits, sourceMode and
-  # beefShardBits stay as configured, announcers that disagree are reported as
-  # divergence (multicast_manifest_divergence_total{field}), and the proxy never
-  # restarts itself. To move a value, change it here and restart. Default off.
+  # authoritative pilot manifests. Images built with lightwebinc/shard-proxy#45
+  # only observe: shardBits, sourceMode and beefShardBits stay as configured,
+  # announcers that disagree are reported as divergence
+  # (multicast_manifest_divergence_total{field}), and the proxy never restarts
+  # itself; to move a value, change it here and restart. Images through 1.44.2,
+  # this chart's appVersion included, restart to adopt instead: with no
+  # announcers at all they read their own flags back as a change and restart
+  # about 2 s after every start unless liveResharding is on, so keep enabled
+  # false on them. Default off.
   autoShardConfig:
     enabled: false          # MANIFEST_CONSUMER_ENABLED: master switch
     bootstrap: "optional"   # MANIFEST_BOOTSTRAP: optional | required (validated, not acted on: egress binds at once)
@@ -200,7 +205,8 @@ config:
     beaconPort: 9001        # MANIFEST_BEACON_PORT: matches shard-manifest -port
     # LIVE_RESHARDING: true = dual emit to the running and successor layouts while
     # an announced Successor block holds quorum; nothing cuts over by itself, so
-    # restart onto the successor's shardBits inside that window. false = observe only.
+    # restart onto the successor's shardBits inside that window. false = observe only
+    # (images through 1.44.2: restart to adopt).
     liveResharding: false
     bridgingWindow: "0s"    # BRIDGING_WINDOW: parsed, not read
 

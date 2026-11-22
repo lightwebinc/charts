@@ -47,7 +47,7 @@ The Linux kernel delivers each multicast datagram to **all** sockets in a SO_REU
 
 The chart ships hardened pod-level defaults: `resources` requests/limits (per node when running as a DaemonSet), a nonroot `podSecurityContext` (uid 65532, seccomp `RuntimeDefault`), and `terminationGracePeriodSeconds: 30`: keep it `>= config.drainTimeout` so in-flight NACK recovery completes on shutdown. The default `workloadType: Deployment` is single-node/test-only; production needs `DaemonSet` plus a fabric `nodeSelector` (see the warning in [`values.yaml`](values.yaml)).
 
-See [`values.yaml`](values.yaml). The flags accepted by the listener binary are exposed under `.config`. The optional flags at the end of `.config` render only when set (an unset value passes nothing, so the binary default applies): the NACK family (`nackBackoffBase`, `nackTailProbe*`, `nackMaxFlows`, `nackMaxForwardJump`, `nackMaxPending`), the reference lanes (`laneTx`, `laneSubtree`, `laneBlock`, `laneHeader`, `laneBeef`), `rebucketRelay`, `retryTee` (`RETRY_TEE`, receive-side mirror to a co-resident retry-endpoint `-tee-listen`), `controlGroupCompat`, `manifestBeaconPort`, `reassemblyTtl` and `reassemblyMaxAge`. Each needs an image at or above the release that added it, and an older image ignores the key: `-nack-tail-probe*` ≥ 1.15.0, `-rebucket-relay` ≥ 1.10.1, `-retry-tee` ≥ 1.24.1, `-reassembly-ttl`/`-reassembly-max-age` ≥ 1.30.0, the lanes ≥ 1.36.0 and `-nack-max-pending` ≥ 1.36.1. When the chart's appVersion is older than an option needs, set `image.tag`. Exposed under `.config`:
+See [`values.yaml`](values.yaml). The flags accepted by the listener binary are exposed under `.config`. The optional flags at the end of `.config` render only when set (an unset value passes nothing, so the binary default applies): the NACK family (`nackBackoffBase`, `nackTailProbe*`, `nackMaxFlows`, `nackMaxForwardJump`, `nackMaxPending`), the reference lanes (`laneTx`, `laneSubtree`, `laneBlock`, `laneHeader`, `laneBeef`), `rebucketRelay`, `retryTee` (`RETRY_TEE`, receive-side mirror to a co-resident retry-endpoint `-tee-listen`), `controlGroupCompat`, `manifestBeaconPort`, `reassemblyTtl` and `reassemblyMaxAge`. Each needs an image at or above the release that added it, and an older image ignores the key: `-nack-tail-probe*` ≥ 1.15.0, `-rebucket-relay` ≥ 1.10.1, `-retry-tee` ≥ 1.24.1, `-reassembly-ttl`/`-reassembly-max-age` ≥ 1.30.0, the lanes ≥ 1.36.0 and `-nack-max-pending` ≥ 1.36.1. When the chart's appVersion is older than an option needs, set `image.tag`. Any lane replaces `config.egressAddr` for every class: a class left without its own lane is withheld (counted in `bsl_lane_drops_total{reason="no_lane"}`). Lanes are not valid with `config.mode: receiver`: the listener refuses to start. Exposed under `.config`:
 
 - `config.mode`: role split (`collapsed`|`receiver`|`delivery`; requires appVersion ≥ 1.6.9) and `config.deliveryAddrs`: receiver-mode delivery fan-out target set (requires appVersion ≥ 1.7.0)
 - Multicast egress / domain bridging
@@ -119,12 +119,14 @@ completeness matters.
 
 `config.autoShardConfig` exposes the BRC-139 manifest consumer. Off by
 default. When `enabled: true` the listener decodes manifests off its beacon
-socket and evaluates them once `pilotQuorum` distinct authoritative
-announcers agree for the hysteresis window. `config.shardBits` and
-`sourceMode` stay as configured: announcers that disagree are counted as
-divergence (`multicast_manifest_divergence_total`), and the listener never
-restarts itself. With `shardIncludeFromManifest: true` it joins pilot groups
-at runtime (`union(shardInclude, pilot groups)`).
+socket and evaluates them; it never restarts itself, and `config.shardBits`
+and `sourceMode` stay as configured. `shardBits` is compared: any
+authoritative announcer of another value is counted as divergence
+(`multicast_manifest_divergence_total`). `sourceMode` is not compared, so a
+source-mode mismatch is not counted. With `shardIncludeFromManifest: true`
+it joins pilot groups at runtime (`union(shardInclude, pilot groups)`) as
+soon as one authoritative pilot lists them: pilot groups are not gated by
+quorum or hysteresis.
 
 | Key | Env var | Default | Notes |
 |-----|---------|---------|-------|

@@ -258,10 +258,12 @@ config:
   # BRC-139 auto-shard-config consumer (opt-in). See
   # bsv-multicast/DESIGN.md#automatic-shard-configuration.
   # When enabled the listener decodes manifests off its beacon socket and
-  # evaluates them once quorum + hysteresis are met. shardBits and sourceMode
-  # stay as configured (announcers that disagree count as divergence); with
+  # evaluates them. shardBits and sourceMode stay as configured: shardBits is
+  # compared, and any authoritative announcer of another value counts as
+  # divergence; sourceMode is not compared. With
   # shardIncludeFromManifest it joins pilot groups via runtime
-  # AddGroup/RemoveGroup. Default off.
+  # AddGroup/RemoveGroup as soon as one authoritative pilot lists them (not
+  # gated by quorum or hysteresis). Default off.
   autoShardConfig:
     enabled: false                # MANIFEST_CONSUMER_ENABLED: master switch
     bootstrap: "optional"         # MANIFEST_BOOTSTRAP: optional | required (validated, not acted on)
@@ -274,6 +276,10 @@ config:
   # Optional binary flags. Each renders only when set: "" or null passes
   # nothing, so the binary default applies and an older image keeps working.
   controlGroupCompat: ""        # CONTROL_GROUP_COMPAT: asm-only | both (binary default) | derived (BRC-129 control groups, FF0x to FF3x move)
+  # Reference lanes, one bridge per object class. Any lane replaces egressAddr
+  # for every class: a class left without a lane is withheld (counted in
+  # bsl_lane_drops_total{reason="no_lane"}). Not valid with mode: receiver (the
+  # listener refuses to start).
   laneBeef: ""                  # LANE_BEEF: TCP host:port for BRC-149 BEEF delivery records
   laneBlock: ""                 # LANE_BLOCK: TCP host:port for BRC-144 block objects
   laneHeader: ""                # LANE_HEADER: TCP host:port for bare 80-byte block headers (BRC-135 payload)
