@@ -186,6 +186,20 @@ config:
   otlpEndpoint: ""
   otlpInterval: "30s"
 
+  # Optional binary flags. Each renders only when set: "" or null passes
+  # nothing, so the binary default applies and an older image keeps working.
+  cacheArenaBytes: null      # CACHE_ARENA_BYTES: memory backend: one block of this many bytes, allocated at start, is the byte cap (binary default 0 = per fragment)
+  cacheMaxBytes: null        # CACHE_MAX_BYTES: memory backend byte cap (binary default 0 = no limit); not read when cacheArenaBytes is set
+  controlGroupCompat: ""     # CONTROL_GROUP_COMPAT: asm-only (binary default) | both | derived; prefix of the BRC-129 0xFFFD groups advertised into
+  ingressGro: null           # INGRESS_GRO: UDP_GRO on each multicast ingress socket (binary default false)
+  ingressProcs: null         # INGRESS_PROCS: processing goroutines per ingress socket (binary default 4)
+  ingressQueueDepth: null    # INGRESS_QUEUE_DEPTH: datagrams queued between receive loop and processors (binary default 1024)
+  ingressRecvBufBytes: null  # INGRESS_RECV_BUF_BYTES: SO_RCVBUF per ingress socket (binary default 64 MiB, clamped by net.core.rmem_max)
+  ingressWorkers: null       # INGRESS_WORKERS: multicast ingress workers, each on its own socket (binary default 1)
+  mcJoinEnabled: null        # MC_JOIN_ENABLED: false = tee-only ingest, no multicast join (binary default true; requires teeListen)
+  pprofListen: ""            # PPROF_LISTEN: loopback address serving net/http/pprof, e.g. "127.0.0.1:6071"
+  teeListen: ""              # TEE_LISTEN: loopback host:port fed by a co-resident proxy or listener retry tee, e.g. "[::1]:9002"
+
 service:
   type: ClusterIP
   metricsPort: 9400

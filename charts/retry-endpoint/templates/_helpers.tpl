@@ -62,6 +62,21 @@ k8s.v1.cni.cncf.io/networks: |
 {{- end -}}
 {{- end -}}
 
+{{/*
+optEnv: one env entry, rendered only when its value is set. null and "" render
+nothing, so the binary default applies and an older image never sees the key;
+0 and false render. Whole numbers go through int64: Helm reads YAML numbers as
+float64, which would print 2147483648 as 2.147483648e+09.
+Usage: include "retry-endpoint.optEnv" (list "NAME" .Values.config.key)
+*/}}
+{{- define "retry-endpoint.optEnv" -}}
+{{- $v := index . 1 -}}
+{{- if not (or (kindIs "invalid" $v) (and (kindIs "string" $v) (eq $v ""))) }}
+- name: {{ index . 0 }}
+  value: {{ if and (kindIs "float64" $v) (eq $v (floor $v)) }}{{ $v | int64 | quote }}{{ else }}{{ $v | toString | quote }}{{ end }}
+{{- end }}
+{{- end -}}
+
 {{- define "retry-endpoint.env" -}}
 - name: MC_IFACE
   value: {{ include "retry-endpoint.iface" . | quote }}
@@ -241,6 +256,18 @@ k8s.v1.cni.cncf.io/networks: |
 - name: OTLP_INTERVAL
   value: {{ .Values.config.otlpInterval | quote }}
 {{- end }}
+{{- /* Optional flags: rendered only when set (see optEnv). */}}
+{{- include "retry-endpoint.optEnv" (list "CACHE_ARENA_BYTES" .Values.config.cacheArenaBytes) }}
+{{- include "retry-endpoint.optEnv" (list "CACHE_MAX_BYTES" .Values.config.cacheMaxBytes) }}
+{{- include "retry-endpoint.optEnv" (list "CONTROL_GROUP_COMPAT" .Values.config.controlGroupCompat) }}
+{{- include "retry-endpoint.optEnv" (list "INGRESS_GRO" .Values.config.ingressGro) }}
+{{- include "retry-endpoint.optEnv" (list "INGRESS_PROCS" .Values.config.ingressProcs) }}
+{{- include "retry-endpoint.optEnv" (list "INGRESS_QUEUE_DEPTH" .Values.config.ingressQueueDepth) }}
+{{- include "retry-endpoint.optEnv" (list "INGRESS_RECV_BUF_BYTES" .Values.config.ingressRecvBufBytes) }}
+{{- include "retry-endpoint.optEnv" (list "INGRESS_WORKERS" .Values.config.ingressWorkers) }}
+{{- include "retry-endpoint.optEnv" (list "MC_JOIN_ENABLED" .Values.config.mcJoinEnabled) }}
+{{- include "retry-endpoint.optEnv" (list "PPROF_LISTEN" .Values.config.pprofListen) }}
+{{- include "retry-endpoint.optEnv" (list "TEE_LISTEN" .Values.config.teeListen) }}
 {{- with .Values.extraEnv }}
 {{ toYaml . }}
 {{- end }}

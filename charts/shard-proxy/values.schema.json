@@ -207,6 +207,39 @@
         "coalesceCarryTxid": {
           "type": "boolean"
         },
+        "allowStampedIngress": {
+          "type": ["boolean", "null"]
+        },
+        "controlGroupCompat": {
+          "type": "string",
+          "enum": ["", "asm-only", "both", "derived"]
+        },
+        "ingressDedup": {
+          "type": ["boolean", "null"]
+        },
+        "pprof": {
+          "type": ["boolean", "null"]
+        },
+        "recvBatch": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "recvBufBytes": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "requireEf": {
+          "type": ["boolean", "null"]
+        },
+        "retryTee": {
+          "type": "string"
+        },
+        "verifyPayloadHash": {
+          "type": ["boolean", "null"]
+        },
+        "verifySubtreeRoot": {
+          "type": ["boolean", "null"]
+        },
         "debug": {
           "type": "boolean"
         },

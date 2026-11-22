@@ -67,6 +67,21 @@ Container env. NUM_WORKERS is forced to 1 by the chart; the value is not
 sourced from .Values.config.numWorkers (which the schema already restricts to 1)
 to defend against schema bypass.
 */}}
+{{/*
+optEnv: one env entry, rendered only when its value is set. null and "" render
+nothing, so the binary default applies and an older image never sees the key;
+0 and false render. Whole numbers go through int64: Helm reads YAML numbers as
+float64, which would print 1048576 as 1.048576e+06.
+Usage: include "shard-listener.optEnv" (list "NAME" .Values.config.key)
+*/}}
+{{- define "shard-listener.optEnv" -}}
+{{- $v := index . 1 -}}
+{{- if not (or (kindIs "invalid" $v) (and (kindIs "string" $v) (eq $v ""))) }}
+- name: {{ index . 0 }}
+  value: {{ if and (kindIs "float64" $v) (eq $v (floor $v)) }}{{ $v | int64 | quote }}{{ else }}{{ $v | toString | quote }}{{ end }}
+{{- end }}
+{{- end -}}
+
 {{- define "shard-listener.env" -}}
 - name: MULTICAST_IF
   value: {{ include "shard-listener.multicastIf" . | quote }}
@@ -330,6 +345,26 @@ to defend against schema bypass.
 - name: BRIDGING_WINDOW
   value: {{ .Values.config.autoShardConfig.bridgingWindow | quote }}
 {{- end }}
+{{- /* Optional flags: rendered only when set (see optEnv). */}}
+{{- include "shard-listener.optEnv" (list "CONTROL_GROUP_COMPAT" .Values.config.controlGroupCompat) }}
+{{- include "shard-listener.optEnv" (list "LANE_BEEF" .Values.config.laneBeef) }}
+{{- include "shard-listener.optEnv" (list "LANE_BLOCK" .Values.config.laneBlock) }}
+{{- include "shard-listener.optEnv" (list "LANE_HEADER" .Values.config.laneHeader) }}
+{{- include "shard-listener.optEnv" (list "LANE_SUBTREE" .Values.config.laneSubtree) }}
+{{- include "shard-listener.optEnv" (list "LANE_TX" .Values.config.laneTx) }}
+{{- include "shard-listener.optEnv" (list "MANIFEST_BEACON_PORT" .Values.config.manifestBeaconPort) }}
+{{- include "shard-listener.optEnv" (list "NACK_BACKOFF_BASE" .Values.config.nackBackoffBase) }}
+{{- include "shard-listener.optEnv" (list "NACK_MAX_FLOWS" .Values.config.nackMaxFlows) }}
+{{- include "shard-listener.optEnv" (list "NACK_MAX_FORWARD_JUMP" .Values.config.nackMaxForwardJump) }}
+{{- include "shard-listener.optEnv" (list "NACK_MAX_PENDING" .Values.config.nackMaxPending) }}
+{{- include "shard-listener.optEnv" (list "NACK_TAIL_PROBE" .Values.config.nackTailProbe) }}
+{{- include "shard-listener.optEnv" (list "NACK_TAIL_PROBE_IDLE_FACTOR" .Values.config.nackTailProbeIdleFactor) }}
+{{- include "shard-listener.optEnv" (list "NACK_TAIL_PROBE_MAX_MISSES" .Values.config.nackTailProbeMaxMisses) }}
+{{- include "shard-listener.optEnv" (list "NACK_TAIL_PROBE_MIN_IDLE" .Values.config.nackTailProbeMinIdle) }}
+{{- include "shard-listener.optEnv" (list "REASSEMBLY_MAX_AGE" .Values.config.reassemblyMaxAge) }}
+{{- include "shard-listener.optEnv" (list "REASSEMBLY_TTL" .Values.config.reassemblyTtl) }}
+{{- include "shard-listener.optEnv" (list "REBUCKET_RELAY" .Values.config.rebucketRelay) }}
+{{- include "shard-listener.optEnv" (list "RETRY_TEE" .Values.config.retryTee) }}
 {{- with .Values.extraEnv }}
 {{ toYaml . }}
 {{- end }}

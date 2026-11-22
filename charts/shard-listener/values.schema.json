@@ -146,6 +146,71 @@
         "localSource": {
           "type": "string"
         },
+        "controlGroupCompat": {
+          "type": "string",
+          "enum": ["", "asm-only", "both", "derived"]
+        },
+        "laneBeef": {
+          "type": "string"
+        },
+        "laneBlock": {
+          "type": "string"
+        },
+        "laneHeader": {
+          "type": "string"
+        },
+        "laneSubtree": {
+          "type": "string"
+        },
+        "laneTx": {
+          "type": "string"
+        },
+        "manifestBeaconPort": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "nackBackoffBase": {
+          "type": "string"
+        },
+        "nackMaxFlows": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "nackMaxForwardJump": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "nackMaxPending": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "nackTailProbe": {
+          "type": ["boolean", "null"]
+        },
+        "nackTailProbeIdleFactor": {
+          "type": ["number", "null"],
+          "exclusiveMinimum": 0
+        },
+        "nackTailProbeMaxMisses": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "nackTailProbeMinIdle": {
+          "type": "string"
+        },
+        "reassemblyMaxAge": {
+          "type": "string"
+        },
+        "reassemblyTtl": {
+          "type": "string"
+        },
+        "rebucketRelay": {
+          "type": ["boolean", "null"]
+        },
+        "retryTee": {
+          "type": "string"
+        },
         "egressProto": {
           "type": "string",
           "enum": [

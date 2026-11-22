@@ -89,6 +89,21 @@ Resolve the MULTICAST_IF env value based on networking.mode.
 {{/*
 Container env vars rendered from .Values.config plus extraEnv passthrough.
 */}}
+{{/*
+optEnv: one env entry, rendered only when its value is set. null and "" render
+nothing, so the binary default applies and an older image never sees the key;
+0 and false render. Whole numbers go through int64: Helm reads YAML numbers as
+float64, which would print 134217728 as 1.34217728e+08.
+Usage: include "shard-proxy.optEnv" (list "NAME" .Values.config.key)
+*/}}
+{{- define "shard-proxy.optEnv" -}}
+{{- $v := index . 1 -}}
+{{- if not (or (kindIs "invalid" $v) (and (kindIs "string" $v) (eq $v ""))) }}
+- name: {{ index . 0 }}
+  value: {{ if and (kindIs "float64" $v) (eq $v (floor $v)) }}{{ $v | int64 | quote }}{{ else }}{{ $v | toString | quote }}{{ end }}
+{{- end }}
+{{- end -}}
+
 {{- define "shard-proxy.env" -}}
 - name: LISTEN_ADDR
   value: {{ .Values.config.listenAddr | quote }}
@@ -223,6 +238,17 @@ Container env vars rendered from .Values.config plus extraEnv passthrough.
 - name: BRIDGING_WINDOW
   value: {{ .Values.config.autoShardConfig.bridgingWindow | quote }}
 {{- end }}
+{{- /* Optional flags: rendered only when set (see optEnv). */}}
+{{- include "shard-proxy.optEnv" (list "ALLOW_STAMPED_INGRESS" .Values.config.allowStampedIngress) }}
+{{- include "shard-proxy.optEnv" (list "BSP_PPROF" .Values.config.pprof) }}
+{{- include "shard-proxy.optEnv" (list "BSP_RECV_BATCH" .Values.config.recvBatch) }}
+{{- include "shard-proxy.optEnv" (list "BSP_RECV_BUF_BYTES" .Values.config.recvBufBytes) }}
+{{- include "shard-proxy.optEnv" (list "BSP_RETRY_TEE" .Values.config.retryTee) }}
+{{- include "shard-proxy.optEnv" (list "CONTROL_GROUP_COMPAT" .Values.config.controlGroupCompat) }}
+{{- include "shard-proxy.optEnv" (list "INGRESS_DEDUP" .Values.config.ingressDedup) }}
+{{- include "shard-proxy.optEnv" (list "REQUIRE_EF" .Values.config.requireEf) }}
+{{- include "shard-proxy.optEnv" (list "VERIFY_PAYLOAD_HASH" .Values.config.verifyPayloadHash) }}
+{{- include "shard-proxy.optEnv" (list "VERIFY_SUBTREE_ROOT" .Values.config.verifySubtreeRoot) }}
 {{- with .Values.extraEnv }}
 {{ toYaml . }}
 {{- end }}

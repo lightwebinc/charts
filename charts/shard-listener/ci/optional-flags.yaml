@@ -1,0 +1,24 @@
+# Every optional flag set: each renders, numbers stay integers (a YAML number
+# reaches the template as float64), and an explicit 0 or false still renders.
+config:
+  sourceMode: ssm
+  ssmPublishersStatic: ["2001:db8:a::1", "2001:db8:a::2"]
+  controlGroupCompat: derived
+  laneBeef: "[::1]:9105"
+  laneBlock: "[::1]:9104"
+  laneHeader: "[::1]:9103"
+  laneSubtree: "[::1]:9102"
+  laneTx: "[::1]:9101"
+  manifestBeaconPort: 9301
+  nackBackoffBase: "250ms"
+  nackMaxFlows: 0
+  nackMaxForwardJump: 8192
+  nackMaxPending: 2097152
+  nackTailProbe: false
+  nackTailProbeIdleFactor: 2.5
+  nackTailProbeMaxMisses: 5
+  nackTailProbeMinIdle: "1s"
+  reassemblyMaxAge: "5m"
+  reassemblyTtl: "20s"
+  rebucketRelay: true
+  retryTee: "[::1]:9002"

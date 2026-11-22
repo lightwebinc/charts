@@ -142,11 +142,19 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- if include "teranode-bridge.apiKeyFile" . }}
+          volumeMounts:
+            - name: blockchain-api-key
+              mountPath: /etc/teranode-bridge/blockchain
+              readOnly: true
+          {{- end }}
         {{- if and .Values.tunnel.enabled (not .Values.tunnel.nativeSidecar) }}
         {{- include "teranode-bridge.tunnelContainer" . | nindent 8 }}
         {{- end }}
-      {{- if .Values.tunnel.enabled }}
+      {{- $apiKey := include "teranode-bridge.apiKeyFile" . }}
+      {{- if or .Values.tunnel.enabled $apiKey }}
       volumes:
+        {{- if .Values.tunnel.enabled }}
         - name: wireguard-secret
           secret:
             secretName: {{ .Values.tunnel.configSecret.name }}
@@ -160,6 +168,17 @@ spec:
           hostPath:
             path: /dev/net/tun
             type: CharDevice
+        {{- end }}
+        {{- end }}
+        {{- if $apiKey }}
+        {{- /* 0440 and the pod's fsGroup: the bridge runs as a non-root uid. */}}
+        - name: blockchain-api-key
+          secret:
+            secretName: {{ .Values.config.blockchainApiKeySecret.name }}
+            defaultMode: 0440
+            items:
+              - key: {{ .Values.config.blockchainApiKeySecret.key | default "api-key" }}
+                path: api-key
         {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}

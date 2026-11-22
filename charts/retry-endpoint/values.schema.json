@@ -167,6 +167,46 @@
         "ssmBootstrapRefresh": {
           "type": "string"
         },
+        "cacheArenaBytes": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "cacheMaxBytes": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "controlGroupCompat": {
+          "type": "string",
+          "enum": ["", "asm-only", "both", "derived"]
+        },
+        "ingressGro": {
+          "type": ["boolean", "null"]
+        },
+        "ingressProcs": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "ingressQueueDepth": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "ingressRecvBufBytes": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "ingressWorkers": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "mcJoinEnabled": {
+          "type": ["boolean", "null"]
+        },
+        "pprofListen": {
+          "type": "string"
+        },
+        "teeListen": {
+          "type": "string"
+        },
         "cacheBackend": {
           "type": "string",
           "enum": [

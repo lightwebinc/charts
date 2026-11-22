@@ -199,6 +199,19 @@ config:
     liveResharding: false   # LIVE_RESHARDING: true = dual-emit bridging; false = restart-on-adopt
     bridgingWindow: "0s"    # BRIDGING_WINDOW: 0 ⇒ honor pilot TransitionEpoch
 
+  # Optional binary flags. Each renders only when set: "" or null passes
+  # nothing, so the binary default applies and an older image keeps working.
+  allowStampedIngress: null  # ALLOW_STAMPED_INGRESS: admit framed input that already carries a SeqNum (relay hop, spine collect lane; binary default false)
+  controlGroupCompat: ""     # CONTROL_GROUP_COMPAT: asm-only | both (binary default) | derived; control-plane group prefix during the FF0x to FF3x move
+  ingressDedup: null         # INGRESS_DEDUP: false bypasses ingress TxID dedup entirely (binary default true)
+  pprof: null                # BSP_PPROF: serve net/http/pprof at /debug/pprof/* on the metrics port (profiling only; binary default false)
+  recvBatch: null            # BSP_RECV_BATCH: datagrams per recvmmsg syscall (binary default 32; 1 = per-packet path)
+  recvBufBytes: null         # BSP_RECV_BUF_BYTES: per-worker SO_RCVBUF (binary default 0 = worker default; capped by net.core.rmem_max)
+  requireEf: null            # REQUIRE_EF: admit Extended Format (BRC-30) transaction submissions only (binary default false)
+  retryTee: ""               # BSP_RETRY_TEE: mirror egressed DATA to a co-located retry endpoint's tee, e.g. "[::1]:9001" (collapsed edge)
+  verifyPayloadHash: null    # VERIFY_PAYLOAD_HASH: check the TxID of framed input against its payload (binary default false)
+  verifySubtreeRoot: null    # VERIFY_SUBTREE_ROOT: drop BRC-132 subtrees whose node hashes miss the root (binary default true)
+
 service:
   type: ClusterIP
   metricsPort: 9100

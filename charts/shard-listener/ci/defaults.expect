@@ -1,0 +1,12 @@
+# Optional flags are not passed unless set, so an older image keeps working.
+- name: CONTROL_GROUP_COMPAT
+- name: LANE_
+- name: MANIFEST_BEACON_PORT
+- name: NACK_BACKOFF_BASE
+- name: NACK_MAX_FLOWS
+- name: NACK_MAX_FORWARD_JUMP
+- name: NACK_MAX_PENDING
+- name: NACK_TAIL_PROBE
+- name: REASSEMBLY_
+- name: REBUCKET_RELAY
+- name: RETRY_TEE

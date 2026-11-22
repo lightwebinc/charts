@@ -270,6 +270,28 @@ config:
     liveResharding: false         # LIVE_RESHARDING: bridging vs restart-on-adopt
     bridgingWindow: "0s"          # BRIDGING_WINDOW: 0 ⇒ honor pilot TransitionEpoch
 
+  # Optional binary flags. Each renders only when set: "" or null passes
+  # nothing, so the binary default applies and an older image keeps working.
+  controlGroupCompat: ""        # CONTROL_GROUP_COMPAT: asm-only | both (binary default) | derived (BRC-129 control groups, FF0x to FF3x move)
+  laneBeef: ""                  # LANE_BEEF: TCP host:port for BRC-149 BEEF delivery records
+  laneBlock: ""                 # LANE_BLOCK: TCP host:port for BRC-144 block objects
+  laneHeader: ""                # LANE_HEADER: TCP host:port for bare 80-byte block headers (BRC-135 payload)
+  laneSubtree: ""               # LANE_SUBTREE: TCP host:port for BRC-143 subtree objects
+  laneTx: ""                    # LANE_TX: TCP host:port for transaction payloads; any lane* replaces egressAddr
+  manifestBeaconPort: null      # MANIFEST_BEACON_PORT: UDP port for BRC-139 manifests (binary default 9001)
+  nackBackoffBase: ""           # NACK_BACKOFF_BASE: base retry delay, doubles per failed round (binary default 500ms)
+  nackMaxFlows: null            # NACK_MAX_FLOWS: cap on tracked per-source flows (binary default 100000; 0 = unbounded)
+  nackMaxForwardJump: null      # NACK_MAX_FORWARD_JUMP: largest loss burst a flow repairs (binary default 4096)
+  nackMaxPending: null          # NACK_MAX_PENDING: cap on gaps pending across all flows (binary default 1048576; 0 = unbounded)
+  nackTailProbe: null           # NACK_TAIL_PROBE: NACK the next SeqNum on a flow gone quiet (binary default true)
+  nackTailProbeIdleFactor: null  # NACK_TAIL_PROBE_IDLE_FACTOR: multiple of the flow's inter-arrival before silence counts (binary default 4.0)
+  nackTailProbeMaxMisses: null  # NACK_TAIL_PROBE_MAX_MISSES: stop probing after this many MISS answers (binary default 3)
+  nackTailProbeMinIdle: ""      # NACK_TAIL_PROBE_MIN_IDLE: floor on the tail-probe idle threshold (binary default 500ms)
+  reassemblyMaxAge: ""          # REASSEMBLY_MAX_AGE: cap on holding a reassembly slot past its TTL while repair runs (binary default 2m)
+  reassemblyTtl: ""             # REASSEMBLY_TTL: wait before an incomplete reassembly slot asks for its fragments (binary default 10s)
+  rebucketRelay: null           # REBUCKET_RELAY: this listener re-buckets on purpose (binary default false)
+  retryTee: ""                  # RETRY_TEE: mirror received frames to a co-resident retry-endpoint's -tee-listen, e.g. "[::1]:9002"
+
 service:
   type: ClusterIP
   metricsPort: 9200

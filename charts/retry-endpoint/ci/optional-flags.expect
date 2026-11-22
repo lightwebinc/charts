@@ -1,0 +1,19 @@
++ name: CACHE_ARENA_BYTES
++ value: "2147483648"
++ name: CACHE_MAX_BYTES
++ value: "1073741824"
++ name: CONTROL_GROUP_COMPAT
++ name: INGRESS_GRO
++ name: INGRESS_PROCS
++ name: INGRESS_QUEUE_DEPTH
++ name: INGRESS_RECV_BUF_BYTES
++ value: "134217728"
++ name: INGRESS_WORKERS
++ name: MC_JOIN_ENABLED
++ value: "false"
++ name: PPROF_LISTEN
++ value: "127.0.0.1:6071"
++ name: TEE_LISTEN
++ value: "[::1]:9002"
+# No number reaches the pod spec in scientific notation.
+- e+0
