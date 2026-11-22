@@ -171,22 +171,31 @@ for fabric prerequisites.
 ### BRC-139 auto-shard-config (opt-in)
 
 `config.autoShardConfig` exposes the BRC-139 manifest consumer. Off by
-default (`enabled: false`); manual `config.shardBits`/`sourceMode` always
-win. When `enabled: true` the proxy opens a dedicated beacon-receive
-socket and adopts `ShardBits`/`SourceMode` from authoritative pilot
-manifests once `pilotQuorum` distinct announcers agree for the
-hysteresis window.
+default (`enabled: false`). When `enabled: true` the proxy opens a
+dedicated beacon-receive socket and evaluates authoritative pilot
+manifests, and only observes: `config.shardBits`, `sourceMode` and
+`beefShardBits` stay as configured, announcers that disagree are reported
+as divergence (`multicast_manifest_divergence_total{field}`, and a warning
+when a field starts diverging), and the proxy never restarts itself. To
+move a proxy to a new value, change it and restart.
+
+`liveResharding: true` adds the bridging path: while an announced
+Successor block holds quorum, the proxy emits each frame to both the
+running and the successor groups (fragmented BRC-130 transactions go to the
+running group only, so receivers keep the running layout joined). Nothing
+cuts over by itself: restart each proxy with the successor's `shardBits`
+inside that window.
 
 | Key | Env var | Default | Notes |
 |-----|---------|---------|-------|
 | `enabled` | `MANIFEST_CONSUMER_ENABLED` | `false` | master switch |
-| `bootstrap` | `MANIFEST_BOOTSTRAP` | `optional` | `required` fails closed: no data-plane egress until quorum |
+| `bootstrap` | `MANIFEST_BOOTSTRAP` | `optional` | validated, not acted on: with `required` the proxy still binds egress at once |
 | `pilotQuorum` | `PILOT_QUORUM` | `2` | min distinct authoritative announcers |
 | `pilotHysteresis` | `PILOT_HYSTERESIS` | `0s` | `0s` ⇒ 2 × AnnounceInterval |
 | `beaconScope` | `MANIFEST_BEACON_SCOPE` | `""` | empty inherits `mcScope` |
 | `beaconPort` | `MANIFEST_BEACON_PORT` | `9001` | matches shard-manifest `-port` |
-| `liveResharding` | `LIVE_RESHARDING` | `false` | `true` = dual-emit bridging; `false` = restart-on-adopt |
-| `bridgingWindow` | `BRIDGING_WINDOW` | `0s` | `0s` ⇒ honor pilot `TransitionEpoch` |
+| `liveResharding` | `LIVE_RESHARDING` | `false` | `true` = dual emit while a Successor block holds quorum, no automatic cutover; `false` = observe only |
+| `bridgingWindow` | `BRIDGING_WINDOW` | `0s` | parsed, not read |
 
 See the [Automatic Shard Configuration](https://github.com/lightwebinc/bsv-multicast/blob/main/DESIGN.md#automatic-shard-configuration).
 

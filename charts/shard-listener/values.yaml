@@ -258,17 +258,18 @@ config:
   # BRC-139 auto-shard-config consumer (opt-in). See
   # bsv-multicast/DESIGN.md#automatic-shard-configuration.
   # When enabled the listener decodes manifests off its beacon socket and
-  # adopts ShardBits/SourceMode (and, with shardIncludeFromManifest, joins
-  # pilot groups via runtime AddGroup/RemoveGroup) once quorum + hysteresis
-  # are met. Manual config above always wins; default off.
+  # evaluates them once quorum + hysteresis are met. shardBits and sourceMode
+  # stay as configured (announcers that disagree count as divergence); with
+  # shardIncludeFromManifest it joins pilot groups via runtime
+  # AddGroup/RemoveGroup. Default off.
   autoShardConfig:
     enabled: false                # MANIFEST_CONSUMER_ENABLED: master switch
-    bootstrap: "optional"         # MANIFEST_BOOTSTRAP: optional | required (fail-closed)
+    bootstrap: "optional"         # MANIFEST_BOOTSTRAP: optional | required (validated, not acted on)
     pilotQuorum: 2                # PILOT_QUORUM: min distinct authoritative announcers
     pilotHysteresis: "0s"         # PILOT_HYSTERESIS: 0 ⇒ 2 × AnnounceInterval
     shardIncludeFromManifest: false  # SHARD_INCLUDE_FROM_MANIFEST: additive auto-join: union(shardInclude, pilot groups)
-    liveResharding: false         # LIVE_RESHARDING: bridging vs restart-on-adopt
-    bridgingWindow: "0s"          # BRIDGING_WINDOW: 0 ⇒ honor pilot TransitionEpoch
+    liveResharding: false         # LIVE_RESHARDING: validated, not acted on; with enabled it needs egressDedupCap > 0 and egressDedupTtl >= 4s
+    bridgingWindow: "0s"          # BRIDGING_WINDOW: parsed, not read
 
   # Optional binary flags. Each renders only when set: "" or null passes
   # nothing, so the binary default applies and an older image keeps working.

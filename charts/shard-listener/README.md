@@ -118,22 +118,23 @@ completeness matters.
 ### BRC-139 auto-shard-config (opt-in)
 
 `config.autoShardConfig` exposes the BRC-139 manifest consumer. Off by
-default; manual `config.shardBits`/`sourceMode`/`shardInclude` always win.
-When `enabled: true` the listener decodes manifests off its beacon socket
-and adopts `ShardBits`/`SourceMode` once `pilotQuorum` distinct
-authoritative announcers agree for the hysteresis window. With
-`shardIncludeFromManifest: true` it additionally joins pilot groups at
-runtime (`union(shardInclude, pilot groups)`).
+default. When `enabled: true` the listener decodes manifests off its beacon
+socket and evaluates them once `pilotQuorum` distinct authoritative
+announcers agree for the hysteresis window. `config.shardBits` and
+`sourceMode` stay as configured: announcers that disagree are counted as
+divergence (`multicast_manifest_divergence_total`), and the listener never
+restarts itself. With `shardIncludeFromManifest: true` it joins pilot groups
+at runtime (`union(shardInclude, pilot groups)`).
 
 | Key | Env var | Default | Notes |
 |-----|---------|---------|-------|
 | `enabled` | `MANIFEST_CONSUMER_ENABLED` | `false` | master switch |
-| `bootstrap` | `MANIFEST_BOOTSTRAP` | `optional` | `required` fails closed: no data-plane bind until quorum |
+| `bootstrap` | `MANIFEST_BOOTSTRAP` | `optional` | validated, not acted on: with `required` the listener still binds the data plane at once |
 | `pilotQuorum` | `PILOT_QUORUM` | `2` | min distinct authoritative announcers |
 | `pilotHysteresis` | `PILOT_HYSTERESIS` | `0s` | `0s` ⇒ 2 × AnnounceInterval |
 | `shardIncludeFromManifest` | `SHARD_INCLUDE_FROM_MANIFEST` | `false` | additive auto-join to pilot groups |
-| `liveResharding` | `LIVE_RESHARDING` | `false` | bridging vs restart-on-adopt |
-| `bridgingWindow` | `BRIDGING_WINDOW` | `0s` | `0s` ⇒ honor pilot `TransitionEpoch` |
+| `liveResharding` | `LIVE_RESHARDING` | `false` | validated, not acted on; with `enabled` it needs `config.egressDedupCap > 0` and `config.egressDedupTtl >= 4s` |
+| `bridgingWindow` | `BRIDGING_WINDOW` | `0s` | parsed, not read |
 
 See the [Automatic Shard Configuration](https://github.com/lightwebinc/bsv-multicast/blob/main/DESIGN.md#automatic-shard-configuration).
 
