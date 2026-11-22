@@ -13,7 +13,7 @@ This repository packages templates, default values, JSON Schema validation, and 
 ```bash
 # OCI registry (SSM default: bindSource is the pod's fabric IPv6, unique per replica)
 helm install proxy oci://ghcr.io/lightwebinc/charts/shard-proxy \
-  --version 0.7.11 -n bsv-mcast --create-namespace \
+  --version 0.7.12 -n bsv-mcast --create-namespace \
   --set networking.multus.fabricIPv6=2001:db8::21/64 \
   --set config.bindSource=2001:db8::21
 
@@ -173,15 +173,14 @@ for fabric prerequisites.
 `config.autoShardConfig` exposes the BRC-139 manifest consumer. Off by
 default (`enabled: false`). When `enabled: true` the proxy opens a
 dedicated beacon-receive socket and evaluates authoritative pilot
-manifests. Images built with lightwebinc/shard-proxy#45 only observe:
+manifests. From image 1.44.3, this chart's appVersion, it only observes:
 `config.shardBits`, `sourceMode` and `beefShardBits` stay as configured,
 announcers that disagree are reported as divergence
 (`multicast_manifest_divergence_total{field}`, and a warning when a field
 starts diverging), and the proxy never restarts itself. To move a proxy to
 a new value, change it and restart.
 
-Images through 1.44.2, this chart's appVersion (1.43.1) included, restart
-to adopt manifest values instead. With no announcers at all they read their
+Images through 1.44.2 restart to adopt manifest values instead. With no announcers at all they read their
 own flags back as a change and restart about 2 s after every start, unless
 `liveResharding` is on; keep `enabled: false` on those images.
 

@@ -14,7 +14,7 @@ This repository packages templates, default values, JSON Schema validation, and 
 # SSM default: bindSource is the pod's fabric IPv6, and at least one bootstrap
 # source list is required (here the shard-manifest source); see SSM below
 helm install retry-node-1 oci://ghcr.io/lightwebinc/charts/retry-endpoint \
-  --version 0.5.7 -n bsv-mcast --create-namespace \
+  --version 0.5.8 -n bsv-mcast --create-namespace \
   --set networking.multus.fabricIPv6=2001:db8::24/64 \
   --set config.nackAddr=2001:db8::24 \
   --set config.bindSource=2001:db8::24 \

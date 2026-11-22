@@ -14,7 +14,7 @@ This repository packages templates, default values, JSON Schema validation, and 
 # DaemonSet over a labeled set of fabric nodes (recommended). SSM default: at
 # least one bootstrap source list is required (here the shard-manifest source)
 helm install listener oci://ghcr.io/lightwebinc/charts/shard-listener \
-  --version 0.8.4 -n bsv-mcast --create-namespace \
+  --version 0.8.5 -n bsv-mcast --create-namespace \
   --set workloadType=DaemonSet \
   --set 'nodeSelector.bsv-mcast/role=listener' \
   --set config.retryEndpoints='[2001:db8::24]:9300\,[2001:db8::25]:9300\,[2001:db8::26]:9300' \
@@ -122,11 +122,11 @@ default. When `enabled: true` the listener decodes manifests off its beacon
 socket and evaluates them, and only observes: `config.shardBits` and
 `sourceMode` stay as configured, and the listener never restarts itself. An
 authoritative announcer of another `shardBits` is counted as divergence
-(`multicast_manifest_divergence_total`); images built with
-lightwebinc/shard-listener#53 compare `sourceMode` too, and log a divergence
-once when it starts and once when it clears. Older images, the chart's
-appVersion included, do not compare `sourceMode`, and log `auto-config adopted
-new ShardBits (restart mode)` at start without acting on it. With
+(`multicast_manifest_divergence_total`). From image 1.37.3, this chart's
+appVersion, it compares `sourceMode` too, and logs a divergence once when it
+starts and once when it clears. Older images do not compare `sourceMode`, and
+log `auto-config adopted new ShardBits (restart mode)` at start without acting
+on it. With
 `shardIncludeFromManifest: true` the listener joins pilot groups at runtime
 (`union(shardInclude, pilot groups)`) as soon as one authoritative pilot lists
 them: pilot groups are not gated by quorum or hysteresis.

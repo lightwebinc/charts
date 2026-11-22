@@ -260,8 +260,8 @@ config:
   # When enabled the listener decodes manifests off its beacon socket and
   # evaluates them, but only observes: shardBits and sourceMode stay as
   # configured, any authoritative announcer of another shardBits counts as
-  # divergence (another sourceMode too on images built with
-  # lightwebinc/shard-listener#53), and the listener never restarts itself. With
+  # divergence (another sourceMode too, from image 1.37.3), and the listener
+  # never restarts itself. With
   # shardIncludeFromManifest it joins pilot groups via runtime
   # AddGroup/RemoveGroup as soon as one authoritative pilot lists them (not
   # gated by quorum or hysteresis). Default off.
