@@ -187,7 +187,7 @@ config:
   # BRC-139 auto-shard-config consumer (opt-in). See
   # bsv-multicast/DESIGN.md#automatic-shard-configuration.
   # When enabled the proxy opens a dedicated beacon-receive socket and evaluates
-  # authoritative pilot manifests. From image 1.44.3 (this chart's appVersion)
+  # authoritative pilot manifests. From image 1.44.3
   # it only observes: shardBits, sourceMode and beefShardBits stay as configured,
   # announcers that disagree are reported as divergence
   # (multicast_manifest_divergence_total{field}), and the proxy never restarts
