@@ -2,12 +2,12 @@ apiVersion: v2
 name: shard-listener
 description: IPv6 multicast shard subscriber for the Bitcoin transaction distribution network
 type: application
-version: 0.8.5
+version: 0.8.6
 # appVersion MUST equal a tag published on ghcr.io/lightwebinc/shard-listener
 # (the chart's tag:"" default pulls this). Images are published manually via the
 # binary repo's image-publish.yml workflow; bump appVersion ONLY in lockstep with
 # an image publish: binary git tags are NOT image tags until published.
-appVersion: "1.37.3"
+appVersion: "1.37.4"
 kubeVersion: ">= 1.27.0-0"
 keywords:
   - bitcoin
@@ -27,6 +27,8 @@ icon: https://raw.githubusercontent.com/lightwebinc/bsv-multicast/main/.assets/i
 annotations:
   artifacthub.io/license: Apache-2.0
   artifacthub.io/changes: |
+    - kind: changed
+      description: appVersion 1.37.4: dependency and base image updates
     - kind: changed
       description: appVersion 1.37.3: only the flow's emitter signals a proxy restart, the manifest consumer compares sourceMode and logs divergence once when it starts and once when it clears, SSM block-broadcast sources and co-bind fixes, license files in the image
     - kind: changed
